@@ -111,9 +111,7 @@ function sArenaMixin:OnLoad()
 end
 
 function sArenaMixin:OnEvent(event)
-    if DLAPI then DLAPI.DebugLog("OnEvent", event) end
     if (event == "PLAYER_LOGIN") then
-        log("PLAYER_LOGIN")
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
     elseif (event == "PLAYER_ENTERING_WORLD") then
@@ -326,30 +324,20 @@ function sArenaFrameMixin:OnLoad()
     self.TexturePool = CreateTexturePool(self, "ARTWORK", nil, nil, ResetTexture)
 end
 
-local function log(msg) 
-    if DLAPI then DLAPI.DebugLog("sArenaFrameMixin:OnEvent", msg) end
-end
-
 function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
     local unit = self.unit
 
     if (eventUnit and eventUnit == unit) then
         if (event == "UNIT_SPELLCAST_SUCCEEDED") then
-              log("UNIT_SPELLCAST_SUCCEEDED: " .. event .. " unit: " .. unit .. " arg1: " .. arg1 .. " arg2: " .. arg2)
-              -- arg2 == 336126 and unit starts with 'arena'
-            --   if(arg2 == 336126 and string.find(unit, "arena")) then
              if(arg2 == 336126) then
-                log("Trinket used by " .. unit)
                 self:UpdateTrinketSammers(unit)
               end
         elseif (event == "UNIT_NAME_UPDATE") then
             self.Name:SetText(GetUnitName(unit))
         elseif (event == "ARENA_OPPONENT_UPDATE") then
-            -- arg1 == unitEvent ("seen", "unseen", etc)
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
         elseif (event == "ARENA_COOLDOWNS_UPDATE") then
-            if DLAPI then DLAPI.DebugLog("ARENA_COOLDOWNS_UPDATE", "ARENA_COOLDOWNS_UPDATE") end
             self:UpdateTrinket()
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
             -- arg1 == spellID
@@ -589,7 +577,6 @@ end
 
 function sArenaFrameMixin:UpdateTrinketSammers(unit)
     trinket = self.Trinket
-    
     trinket.Cooldown:SetCooldown(GetTime(), 120)
     if (IsHealer(unit)) then
         trinket.Cooldown:SetCooldown(GetTime(), 90)
