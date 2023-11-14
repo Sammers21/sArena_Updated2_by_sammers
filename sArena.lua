@@ -589,6 +589,7 @@ end
 
 function sArenaFrameMixin:UpdateTrinketSammers(unit)
     trinket = self.Trinket
+    
     trinket.Cooldown:SetCooldown(GetTime(), 120)
     if (IsHealer(unit)) then
         trinket.Cooldown:SetCooldown(GetTime(), 90)

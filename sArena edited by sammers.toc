@@ -1,11 +1,11 @@
 ## Interface: 100007
-## Title: sArena Updated
+## Title: sArena edited by sammers
 ## Notes: Enhanced arena frames
 ## Author: Stako
-## Version: 3.2.2
+## Version: 3.2.3
 ## OptionalDeps: ElvUI
 ## X-Category: PvP/Arena
-## X-Credits: Tekkub, Starship, Kouri, Kollektiv, Lyn, haste, evl, Zork, jturel, wardz
+## X-Credits: Stako, Tekkub, Starship, Kouri, Kollektiv, Lyn, haste, evl, Zork, jturel, wardz, yaggertv
 
 ## SavedVariables: sArena3DB
 
