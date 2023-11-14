@@ -111,14 +111,15 @@ function sArenaMixin:OnLoad()
 end
 
 function sArenaMixin:OnEvent(event)
+    if DLAPI then DLAPI.DebugLog("OnEvent", event) end
     if (event == "PLAYER_LOGIN") then
+        log("PLAYER_LOGIN")
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
     elseif (event == "PLAYER_ENTERING_WORLD") then
         local _, instanceType = IsInInstance()
         UpdateBlizzVisibility(instanceType)
         self:SetMouseState(true)
-
         if (instanceType == "arena") then
             self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
         else
@@ -126,21 +127,17 @@ function sArenaMixin:OnEvent(event)
         end
     elseif (event == "COMBAT_LOG_EVENT_UNFILTERED") then
         local _, combatEvent, _, sourceGUID, _, _, _, destGUID, _, _, _, spellID, _, _, auraType = CombatLogGetCurrentEventInfo()
-
+        if DLAPI then DLAPI.DebugLog("COMBAT_LOG_EVENT_UNFILTERED", "UNFILTERED" .. " spellID: " .. spellID .. "combatEvent: " ..  combatEvent .. " sourceGUID: " .. sourceGUID .. " destGUID: " .. destGUID .. " auraType: " .. auraType) end
         for i = 1, 3 do
             local ArenaFrame = self["arena" .. i]
-
             if (sourceGUID == UnitGUID("arena" .. i)) then
                 ArenaFrame:FindRacial(combatEvent, spellID)
             end
-
             if (destGUID == UnitGUID("arena" .. i)) then
                 ArenaFrame:FindInterrupt(combatEvent, spellID)
-
                 if (auraType == "DEBUFF") then
                     ArenaFrame:FindDR(combatEvent, spellID)
                 end
-
                 return
             end
         end
@@ -283,6 +280,7 @@ function sArenaFrameMixin:OnLoad()
     self:RegisterEvent("ARENA_OPPONENT_UPDATE")
     self:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
     self:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
+    self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
     self:RegisterUnitEvent("UNIT_HEALTH", unit)
     self:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
     self:RegisterUnitEvent("UNIT_POWER_UPDATE", unit)
@@ -328,17 +326,30 @@ function sArenaFrameMixin:OnLoad()
     self.TexturePool = CreateTexturePool(self, "ARTWORK", nil, nil, ResetTexture)
 end
 
-function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
+local function log(msg) 
+    if DLAPI then DLAPI.DebugLog("sArenaFrameMixin:OnEvent", msg) end
+end
+
+function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
     local unit = self.unit
 
     if (eventUnit and eventUnit == unit) then
-        if (event == "UNIT_NAME_UPDATE") then
+        if (event == "UNIT_SPELLCAST_SUCCEEDED") then
+              log("UNIT_SPELLCAST_SUCCEEDED: " .. event .. " unit: " .. unit .. " arg1: " .. arg1 .. " arg2: " .. arg2)
+              -- arg2 == 336126 and unit starts with 'arena'
+            --   if(arg2 == 336126 and string.find(unit, "arena")) then
+             if(arg2 == 336126) then
+                log("Trinket used by " .. unit)
+                self:UpdateTrinketSammers(unit)
+              end
+        elseif (event == "UNIT_NAME_UPDATE") then
             self.Name:SetText(GetUnitName(unit))
         elseif (event == "ARENA_OPPONENT_UPDATE") then
             -- arg1 == unitEvent ("seen", "unseen", etc)
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
         elseif (event == "ARENA_COOLDOWNS_UPDATE") then
+            if DLAPI then DLAPI.DebugLog("ARENA_COOLDOWNS_UPDATE", "ARENA_COOLDOWNS_UPDATE") end
             self:UpdateTrinket()
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
             -- arg1 == spellID
@@ -556,10 +567,38 @@ function sArenaFrameMixin:UpdateClassIcon()
     self.ClassIcon:SetTexture(texture)
 end
 
+local function IsHealer(unit)
+	local id = string.match(unit, "arena(%d)")
+	local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(id)
+	if(specID) then
+		local id, name, description, icon, role, class = GetSpecializationInfoByID(specID)
+		if(	
+			id == 65 or 	-- Holy Paladin
+			id == 105 or 	-- Restoration Druid
+			id == 256 or	-- Discipline Priest
+			id == 257 or	-- Holy Priest
+			id == 264 or 	-- Restoration Shaman
+			id == 270 or 	-- Mistweaver Monk
+			id == 1468)		-- Preservation Evoker
+			then return true
+		end
+		return false
+	end
+	return false
+end
+
+function sArenaFrameMixin:UpdateTrinketSammers(unit)
+    trinket = self.Trinket
+    trinket.Cooldown:SetCooldown(GetTime(), 120)
+    if (IsHealer(unit)) then
+        trinket.Cooldown:SetCooldown(GetTime(), 90)
+    end
+end
+
 function sArenaFrameMixin:UpdateTrinket()
     local spellID, startTime, duration = C_PvP.GetArenaCrowdControlInfo(self.unit)
     local trinket = self.Trinket
-
+    if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellID .. " startTime: " .. startTime .. " duration: " .. duration) end
     if (spellID) then
         if (spellID ~= trinket.spellID) then
             local _, spellTextureNoOverride = GetSpellTexture(spellID)
