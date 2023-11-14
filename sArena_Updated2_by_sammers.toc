@@ -1,5 +1,5 @@
 ## Interface: 100200
-## Title: sArena edited by sammers
+## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced arena frames
 ## Author: Stako
 ## Version: 3.2.3
