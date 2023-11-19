@@ -1,0 +1,30 @@
+name: Release new version to CurseForge
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    if: "contains(github.event.head_commit.message, 'release')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set env
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
+      - name: "Delete CurseForge restricted files"
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: 
+          - "mkdir sArena_Updated2_by_sammers"
+          - "cp -r * sArena_Updated2_by_sammers/"
+          - "zip -vr sArena_Updated2_by_sammers-$RELEASE_VERSION.zip sArena_Updated2_by_sammers/"
+      - name: "Upload to CurseForge"
+        uses: itsmeow/curseforge-upload@v3
+        with: 
+          file_path: "sArena_Updated2_by_sammers-$RELEASE_VERSION.zip"
+          game_endpoint: "worldofwarcraft"
+          game_versions: ""
+          project_id: 0
+          token: "${{ secrets.CF_API_TOKEN }}"
