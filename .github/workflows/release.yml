@@ -14,6 +14,12 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: echo ::set-env name=version::0.2
+      - name: Get next version
+        uses: reecetech/version-increment@2023.9.3
+        id: version
+        with:
+          scheme: semver
+          increment: patch
       - name: "Delete CurseForge restricted files"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -34,8 +40,8 @@ jobs:
         with:
           draft: false
           prerelease: false
-          release_name: "v${{ steps.set_env.outputs.version }}"
-          tag_name: "v${{ steps.set_env.outputs.version }}"
+          release_name: "v$${{ steps.version.outputs.version }}"
+          tag_name: "v${{ steps.version.outputs.version }}"
           body: "Relesing version ${{ steps.set_env.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
