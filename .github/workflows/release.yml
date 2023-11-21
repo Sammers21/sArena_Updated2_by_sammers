@@ -34,8 +34,8 @@ jobs:
         with:
           draft: false
           prerelease: false
-          release_name: ${{ steps.set_env.outputs.version }}
-          tag_name: ${{ steps.set_env.outputs.version }}
+          release_name: "v${{ steps.set_env.outputs.version }}"
+          tag_name: "v${{ steps.set_env.outputs.version }}"
           body: "Relesing version ${{ steps.set_env.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
