@@ -18,7 +18,7 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           mkdir sArena_Updated2_by_sammers 
-          crsync -Rr * sArena_Updated2_by_sammers/
+          cp -R * sArena_Updated2_by_sammers/
           zip -vr sArena_Updated2_by_sammers-$RELEASE_VERSION.zip sArena_Updated2_by_sammers/
       # - name: "Upload to CurseForge"
       #   uses: itsmeow/curseforge-upload@v3
