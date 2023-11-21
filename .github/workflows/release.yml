@@ -18,7 +18,14 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           mkdir sArena_Updated2_by_sammers 
-          cp -R * sArena_Updated2_by_sammers/
+          cp -R Ace3 sArena_Updated2_by_sammers/
+          cp -R Layouts sArena_Updated2_by_sammers/
+          cp -R Modules sArena_Updated2_by_sammers/
+          cp Config.lua sArena_Updated2_by_sammers/
+          cp LICENSE.txt sArena_Updated2_by_sammers/
+          cp sArena_Updated2_by_sammers.toc sArena_Updated2_by_sammers/
+          cp sArena.lua sArena_Updated2_by_sammers/
+          cp sArena.xml sArena_Updated2_by_sammers/
           zip -vr sArena_Updated2_by_sammers-$RELEASE_VERSION.zip sArena_Updated2_by_sammers/
       # - name: "Upload to CurseForge"
       #   uses: itsmeow/curseforge-upload@v3
