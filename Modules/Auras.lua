@@ -83,6 +83,7 @@ sArenaMixin.auraList = tInvert({
     207685, -- Sigil of Misery (Disorient)
     198909, -- Song of Chi-ji (Disorient)
     202274, -- Incendiary Brew (Disorient)
+    130616, -- Fear (Warlock Horrify talent)
     118699, -- Fear (Disorient)
     1513,   -- Scare Beast (Disorient)
     10326,  -- Turn Evil (Disorient)
