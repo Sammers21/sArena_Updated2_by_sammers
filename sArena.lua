@@ -330,7 +330,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
     if (eventUnit and eventUnit == unit) then
         if (event == "UNIT_SPELLCAST_SUCCEEDED") then
             if DLAPI then DLAPI.DebugLog("UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_SUCCEEDED" .. " spellID: " .. arg2) end
-             if(arg2 == 336126 or arg2 == 265221) then
+             if(arg2 == 336126 or arg2 == 265221 or arg2 == 20594) then
                 self:UpdateTrinketSammers(unit, arg2)
             end
         elseif (event == "UNIT_NAME_UPDATE") then
@@ -586,10 +586,10 @@ function sArenaFrameMixin:UpdateTrinketSammers(unit, spellId)
         if (IsHealer(unit)) then
             trinket.Cooldown:SetCooldown(GetTime(), 90)
         end
-        -- Dwarf Racial
-    elseif (spellId == 265221) then
+        -- Dwarf Racial 20594(normal) and 265221(iron dwarf)
+    elseif (spellId == 265221 or spellId == 20594) then
         if (trinket.Cooldown:GetCooldownDuration() > 30) then
-            if DLAPI then DLAPI.DebugLog("UpdateTrinket", "Trinket current time left:" .. trinket.Cooldown:GetCooldownDuration()) end
+            if DLAPI then DLAPI.DebugLog("UpdateTrinket", "Dwarf trinket current time left:" .. trinket.Cooldown:GetCooldownDuration()) end
         else
             trinket.Cooldown:SetCooldown(GetTime(), 30)
         end
