@@ -329,16 +329,18 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
 
     if (eventUnit and eventUnit == unit) then
         if (event == "UNIT_SPELLCAST_SUCCEEDED") then
-             if(arg2 == 336126) then
-                self:UpdateTrinketSammers(unit)
-              end
+            if DLAPI then DLAPI.DebugLog("UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_SUCCEEDED" .. " spellID: " .. arg2) end
+             if(arg2 == 336126 or arg2 == 265221) then
+                self:UpdateTrinketSammers(unit, arg2)
+            end
         elseif (event == "UNIT_NAME_UPDATE") then
             self.Name:SetText(GetUnitName(unit))
         elseif (event == "ARENA_OPPONENT_UPDATE") then
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
         elseif (event == "ARENA_COOLDOWNS_UPDATE") then
-            self:UpdateTrinket()
+            if DLAPI then DLAPI.DebugLog("ARENA_COOLDOWNS_UPDATE", "ARENA_COOLDOWNS_UPDATE") end
+            -- self:UpdateTrinket()
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
             -- arg1 == spellID
             if (arg1 ~= self.Trinket.spellID) then
@@ -575,11 +577,22 @@ local function IsHealer(unit)
 	return false
 end
 
-function sArenaFrameMixin:UpdateTrinketSammers(unit)
+function sArenaFrameMixin:UpdateTrinketSammers(unit, spellId)
     trinket = self.Trinket
-    trinket.Cooldown:SetCooldown(GetTime(), 120)
-    if (IsHealer(unit)) then
-        trinket.Cooldown:SetCooldown(GetTime(), 90)
+    if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellId) end
+    -- Normal Trinket
+    if (spellId == 336126) then
+        trinket.Cooldown:SetCooldown(GetTime(), 120)
+        if (IsHealer(unit)) then
+            trinket.Cooldown:SetCooldown(GetTime(), 90)
+        end
+        -- Dwarf Racial
+    elseif (spellId == 265221) then
+        if (trinket.Cooldown:GetCooldownDuration() > 30) then
+            if DLAPI then DLAPI.DebugLog("UpdateTrinket", "Trinket current time left:" .. trinket.Cooldown:GetCooldownDuration()) end
+        else
+            trinket.Cooldown:SetCooldown(GetTime(), 30)
+        end
     end
 end
 
@@ -605,7 +618,7 @@ function sArenaFrameMixin:ResetTrinket()
     self.Trinket.spellID = nil
     self.Trinket.Texture:SetTexture(nil)
     self.Trinket.Cooldown:Clear()
-    self:UpdateTrinket()
+    -- self:UpdateTrinket()
 end
 
 local function ResetStatusBar(f)
