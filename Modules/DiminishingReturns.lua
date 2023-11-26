@@ -125,6 +125,7 @@ drList = {
     [226943]  = "Disorient",       -- Mind Bomb
     [2094]    = "Disorient",       -- Blind
     [118699]  = "Disorient",       -- Fear
+    [130616]  = "Disorient",       -- Fear (Warlock Horrify talent)
     [6358]    = "Disorient",       -- Seduction (Succubus)
     [115268]  = "Disorient",       -- Mesmerize (Shivarra)
     [5246]    = "Disorient",       -- Intimidating Shout
