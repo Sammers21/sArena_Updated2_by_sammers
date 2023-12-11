@@ -183,6 +183,7 @@ sArenaMixin.auraList = tInvert({
 
     -- Anti CCs
     23920,  -- Spell Reflection
+    377362, -- Precognition
     213610, -- Priest: Holy Ward
     212295, -- Warlock: Nether Ward
     48707,  -- Death Knight: Anti-Magic Shell
