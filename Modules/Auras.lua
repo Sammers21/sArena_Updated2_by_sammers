@@ -180,6 +180,7 @@ sArenaMixin.auraList = tInvert({
     212619, -- Call Felhunter (Warlock)
     231665, -- Avengers Shield (Paladin)
     351338, -- Quell (Evoker)
+    97547,   -- Solar Beam
 
     -- Anti CCs
     23920,  -- Spell Reflection
