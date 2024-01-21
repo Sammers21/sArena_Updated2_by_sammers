@@ -125,7 +125,7 @@ function sArenaMixin:OnEvent(event)
         end
     elseif (event == "COMBAT_LOG_EVENT_UNFILTERED") then
         local _, combatEvent, _, sourceGUID, _, _, _, destGUID, _, _, _, spellID, _, _, auraType = CombatLogGetCurrentEventInfo()
-        if DLAPI then DLAPI.DebugLog("COMBAT_LOG_EVENT_UNFILTERED", "UNFILTERED" .. " spellID: " .. spellID .. "combatEvent: " ..  combatEvent .. " sourceGUID: " .. sourceGUID .. " destGUID: " .. destGUID .. " auraType: " .. auraType) end
+        -- if DLAPI then DLAPI.DebugLog("COMBAT_LOG_EVENT_UNFILTERED", "UNFILTERED" .. " spellID: " .. spellID .. "combatEvent: " ..  combatEvent .. " sourceGUID: " .. sourceGUID .. " destGUID: " .. destGUID .. " auraType: " .. auraType) end
         for i = 1, 3 do
             local ArenaFrame = self["arena" .. i]
             if (sourceGUID == UnitGUID("arena" .. i)) then
@@ -329,7 +329,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
 
     if (eventUnit and eventUnit == unit) then
         if (event == "UNIT_SPELLCAST_SUCCEEDED") then
-            if DLAPI then DLAPI.DebugLog("UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_SUCCEEDED" .. " spellID: " .. arg2) end
+            -- if DLAPI then DLAPI.DebugLog("UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_SUCCEEDED" .. " spellID: " .. arg2) end
              if(arg2 == 336126 or arg2 == 265221 or arg2 == 20594) then
                 self:UpdateTrinketSammers(unit, arg2)
             end
@@ -339,7 +339,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
         elseif (event == "ARENA_COOLDOWNS_UPDATE") then
-            if DLAPI then DLAPI.DebugLog("ARENA_COOLDOWNS_UPDATE", "ARENA_COOLDOWNS_UPDATE") end
+            -- if DLAPI then DLAPI.DebugLog("ARENA_COOLDOWNS_UPDATE", "ARENA_COOLDOWNS_UPDATE") end
             -- self:UpdateTrinket()
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
             -- arg1 == spellID
@@ -579,7 +579,7 @@ end
 
 function sArenaFrameMixin:UpdateTrinketSammers(unit, spellId)
     trinket = self.Trinket
-    if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellId) end
+    -- if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellId) end
     -- Normal Trinket
     if (spellId == 336126) then
         trinket.Cooldown:SetCooldown(GetTime(), 120)
@@ -589,7 +589,7 @@ function sArenaFrameMixin:UpdateTrinketSammers(unit, spellId)
         -- Dwarf Racial 20594(normal) and 265221(iron dwarf)
     elseif (spellId == 265221 or spellId == 20594) then
         if (trinket.Cooldown:GetCooldownDuration() > 30) then
-            if DLAPI then DLAPI.DebugLog("UpdateTrinket", "Dwarf trinket current time left:" .. trinket.Cooldown:GetCooldownDuration()) end
+            -- if DLAPI then DLAPI.DebugLog("UpdateTrinket", "Dwarf trinket current time left:" .. trinket.Cooldown:GetCooldownDuration()) end
         else
             trinket.Cooldown:SetCooldown(GetTime(), 30)
         end
