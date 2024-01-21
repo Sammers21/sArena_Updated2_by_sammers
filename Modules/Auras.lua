@@ -209,6 +209,7 @@ sArenaMixin.auraList = tInvert({
     375901, -- Mindgames
 
     -- Disarms
+    410126, 410201, -- Searing Glare
     236077, -- Disarm
     236236, -- Disarm (Protection)
     209749, -- Faerie Swarm (Disarm)
