@@ -302,21 +302,26 @@ function sArenaFrameMixin:OnLoad()
 
     self.myHealPredictionBar:ClearAllPoints()
     self.otherHealPredictionBar:ClearAllPoints()
-    self.totalAbsorbBar:ClearAllPoints()
+    -- self.totalAbsorbBar:ClearAllPoints()
     self.overAbsorbGlow:ClearAllPoints()
-    self.healAbsorbBar:ClearAllPoints()
+    -- self.healAbsorbBar:ClearAllPoints()
+    -- self.healAbsorbBar = _G["healAbsorbBar"];
+    -- self.healAbsorbBar:SetStatusBar(self.healthbar);
+    -- self.healAbsorbBar:ClearAllPoints()
     self.overHealAbsorbGlow:ClearAllPoints()
-    self.healAbsorbBarLeftShadow:ClearAllPoints()
-    self.healAbsorbBarRightShadow:ClearAllPoints()
-
-    self.totalAbsorbBar.overlay = self.totalAbsorbBarOverlay
-    self.totalAbsorbBarOverlay:SetAllPoints(self.totalAbsorbBar)
-    self.totalAbsorbBarOverlay.tileSize = 32
+	-- self.totalAbsorbBar = _G["totalAbsorbBar"];
+    -- self.totalAbsorbBar:ClearAllPoints()
+	-- self.totalAbsorbBar:SetStatusBar(self.healthbar);
+    -- self.totalAbsorbBar:Hide()
+    -- self.totalAbsorbBar.overlay = self.totalAbsorbBarOverlay
+    -- self.totalAbsorbBarOverlay:SetAllPoints(self.totalAbsorbBar)
+    -- self.totalAbsorbBarOverlay.tileSize = 32
+    
 
     self.overAbsorbGlow:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
     self.overAbsorbGlow:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
 
-    self.healAbsorbBar:SetTexture("Interface\\RaidFrame\\Absorb-Fill", true, true)
+    -- self.myHealAbsorb:SetTexture("Interface\\RaidFrame\\Absorb-Fill", true, true)
 
     self.overHealAbsorbGlow:SetPoint("BOTTOMRIGHT", self.healthbar, "BOTTOMLEFT", 7, 0)
     self.overHealAbsorbGlow:SetPoint("TOPRIGHT", self.healthbar, "TOPLEFT", 7, 0)
