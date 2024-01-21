@@ -325,6 +325,7 @@ function sArenaFrameMixin:OnLoad()
 
     self.overHealAbsorbGlow:SetPoint("BOTTOMRIGHT", self.healthbar, "BOTTOMLEFT", 7, 0)
     self.overHealAbsorbGlow:SetPoint("TOPRIGHT", self.healthbar, "TOPLEFT", 7, 0)
+    self.overHealAbsorbGlow:Hide()
 
     self.TexturePool = CreateTexturePool(self, "ARTWORK", nil, nil, ResetTexture)
 end
