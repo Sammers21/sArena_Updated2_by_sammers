@@ -41,7 +41,7 @@ local emptyLayoutOptionsTable = {
     },
 }
 local blizzFrame
-local FEIGN_DEATH = GetSpellInfo(5384) -- Localized name for Feign Death
+local FEIGN_DEATH = C_Spell.GetSpellName(5384) -- Localized name for Feign Death
 
 -- make local vars of globals that are used with high frequency
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
@@ -49,7 +49,7 @@ local UnitGUID = UnitGUID
 local UnitChannelInfo = UnitChannelInfo
 local GetTime = GetTime
 local After = C_Timer.After
-local UnitAura = UnitAura
+local UnitAura = C_UnitAuras.GetAuraDataByIndex
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitPowerMax = UnitPowerMax
@@ -64,7 +64,7 @@ local UnitFrameHealPredictionBars_Update = UnitFrameHealPredictionBars_Update
 local function UpdateBlizzVisibility(instanceType)
     -- hide blizz arena frames while in arena
     if (InCombatLockdown()) then return end
-    if (IsAddOnLoaded("ElvUI")) then return end
+    if (C_AddOns.IsAddOnLoaded("ElvUI")) then return end
 
     if (not blizzFrame) then
         blizzFrame = CreateFrame("Frame", nil, UIParent)
