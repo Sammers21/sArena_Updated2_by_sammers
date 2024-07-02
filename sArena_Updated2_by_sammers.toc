@@ -1,4 +1,4 @@
-## Interface: 100200
+## Interface: 110000
 ## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced arena frames
 ## Author: Stako

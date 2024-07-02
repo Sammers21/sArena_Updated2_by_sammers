@@ -1,0 +1,2 @@
+Current known issues:
+- hpUnderlay and ppUnderlay is working for any of the layouts, however switching layout requires a reload to not mess up the textures.
