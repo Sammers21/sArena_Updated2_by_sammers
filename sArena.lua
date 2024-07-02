@@ -41,7 +41,7 @@ local emptyLayoutOptionsTable = {
     },
 }
 local blizzFrame
-local FEIGN_DEATH = GetSpellInfo(5384) -- Localized name for Feign Death
+local FEIGN_DEATH = C_Spell.GetSpellName(5384) -- Localized name for Feign Death
 
 -- make local vars of globals that are used with high frequency
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
@@ -49,7 +49,7 @@ local UnitGUID = UnitGUID
 local UnitChannelInfo = UnitChannelInfo
 local GetTime = GetTime
 local After = C_Timer.After
-local UnitAura = UnitAura
+local UnitAura = C_UnitAuras.GetAuraDataByIndex
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitPowerMax = UnitPowerMax
@@ -64,7 +64,7 @@ local UnitFrameHealPredictionBars_Update = UnitFrameHealPredictionBars_Update
 local function UpdateBlizzVisibility(instanceType)
     -- hide blizz arena frames while in arena
     if (InCombatLockdown()) then return end
-    if (IsAddOnLoaded("ElvUI")) then return end
+    if (C_AddOns.IsAddOnLoaded("ElvUI")) then return end
 
     if (not blizzFrame) then
         blizzFrame = CreateFrame("Frame", nil, UIParent)
@@ -253,7 +253,7 @@ end
 -- Arena Frames
 
 local function ResetTexture(texturePool, t)
-    if (texturePool) then
+    if texturePool and texturePool.parent then
         t:SetParent(texturePool.parent)
     end
 
@@ -350,7 +350,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
             -- arg1 == spellID
             if (arg1 ~= self.Trinket.spellID) then
-                local _, spellTextureNoOverride = GetSpellTexture(arg1)
+                local _, spellTextureNoOverride = C_Spell.GetSpellTexture(arg1)
                 self.Trinket.spellID = arg1
                 self.Trinket.Texture:SetTexture(spellTextureNoOverride)
             end
@@ -608,7 +608,7 @@ function sArenaFrameMixin:UpdateTrinket()
     if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellID .. " startTime: " .. startTime .. " duration: " .. duration) end
     if (spellID) then
         if (spellID ~= trinket.spellID) then
-            local _, spellTextureNoOverride = GetSpellTexture(spellID)
+            local _, spellTextureNoOverride = C_Spell.GetSpellTexture(spellID)
             trinket.spellID = spellID
             trinket.Texture:SetTexture(spellTextureNoOverride)
         end
@@ -763,7 +763,7 @@ function sArenaFrameMixin:FindInterrupt(event, spellID)
         self.currentInterruptSpellID = spellID
         self.currentInterruptDuration = interruptDuration
         self.currentInterruptExpirationTime = GetTime() + interruptDuration
-        self.currentInterruptTexture = GetSpellTexture(spellID)
+        self.currentInterruptTexture = C_Spell.GetSpellTexture(spellID)
         self:FindAura()
         After(interruptDuration, function()
             self.currentInterruptSpellID = nil

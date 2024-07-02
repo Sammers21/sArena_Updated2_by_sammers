@@ -57,8 +57,10 @@ function sArenaFrameMixin:FindDR(combatEvent, spellID)
         local unit = self.unit
 
         for i = 1, 30 do
-            local _, _, _, _, duration, _, _, _, _, _spellID = UnitAura(unit, i, "HARMFUL")
-
+            local auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+            if auraData then
+                local _spellID = auraData.spellId
+                local duration = auraData.duration
             if ( not _spellID ) then break end
 
             if ( duration and spellID == _spellID ) then
@@ -67,9 +69,10 @@ function sArenaFrameMixin:FindDR(combatEvent, spellID)
                 break
             end
         end
+        end
     end
 
-    frame.Icon:SetTexture(self.parent.db.profile.drDynamicIcons and GetSpellTexture(spellID) or drIcons[category])
+    frame.Icon:SetTexture(self.parent.db.profile.drDynamicIcons and C_Spell.GetSpellTexture(spellID) or drIcons[category])
     frame.Border:SetVertexColor(unpack(severityColor[frame.severity]))
 
     frame.severity = frame.severity + 1

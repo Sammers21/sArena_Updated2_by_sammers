@@ -248,5 +248,6 @@ function layout:UpdateTextures(frame)
     end
 end
 
+
 sArenaMixin.layouts[layoutName] = layout
 sArenaMixin.defaultSettings.profile.layoutSettings[layoutName] = layout.defaultSettings
