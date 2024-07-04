@@ -50,7 +50,7 @@ local racialCategories = {
     ["KulTiran"] = "KulTiran",
     ["Mechagnome"] = "Mechagnome",
     ["Vulpera"] = "Vulpera",
-	["Dracthyr"] = "Dracthyr",
+    ["Dracthyr"] = "Dracthyr",
     ["Earthen"] = "Earthen"
 }
 
