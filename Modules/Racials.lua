@@ -24,7 +24,8 @@ sArenaMixin.defaultSettings.profile.racialCategories = {
     ["KulTiran"] = true,
     ["Mechagnome"] = true,
     ["Vulpera"] = true,
-	["Dracthyr"] = true
+    ["Dracthyr"] = true,
+    ["Earthen"] = true
 }
 
 local racialSpells = {
@@ -51,8 +52,9 @@ local racialSpells = {
     [287712] = 160, -- Haymaker
     [312924] = 180, -- Hyper Organic Light Originator
     [312411] = 90,  -- Bag of Tricks
-	[368970] = 90,  -- Tail Swipe
-	[357214] = 90   -- Wing Buffet
+    [368970] = 90,  -- Tail Swipe
+    [357214] = 90,  -- Wing Buffet
+    [436344] = 120 -- Azerite Surge
 }
 
 local racialData = {
@@ -79,7 +81,8 @@ local racialData = {
     ["KulTiran"] = { texture = C_Spell.GetSpellTexture(287712), sharedCD = 0 },
     ["Mechagnome"] = { texture = C_Spell.GetSpellTexture(312924), sharedCD = 0 },
     ["Vulpera"] = { texture = C_Spell.GetSpellTexture(312411), sharedCD = 0 },
-	["Dracthyr"] = { texture = C_Spell.GetSpellTexture(368970), sharedCD = 0 }
+    ["Dracthyr"] = { texture = C_Spell.GetSpellTexture(368970), sharedCD = 0 },
+    ["Earthen"] = { texture = C_Spell.GetSpellTexture(436344), sharedCD = 0 } -- Update sharedCD if needed
 }
 
 local function GetRemainingCD(frame)
