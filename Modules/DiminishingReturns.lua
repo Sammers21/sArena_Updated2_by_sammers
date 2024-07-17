@@ -24,7 +24,7 @@ local severityColor = {
     [3] = { 1, 0, 0, 1},
 }
 
-local drIcons = {
+sArenaMixin.defaultSettings.profile.drIcons = {
     Stun = 132298,
     Incapacitate = 136071,
     Disorient = 136183,
@@ -72,7 +72,7 @@ function sArenaFrameMixin:FindDR(combatEvent, spellID)
         end
     end
 
-    frame.Icon:SetTexture(self.parent.db.profile.drDynamicIcons and C_Spell.GetSpellTexture(spellID) or drIcons[category])
+    frame.Icon:SetTexture(self.parent.db.profile.drDynamicIcons and C_Spell.GetSpellTexture(spellID) or self.parent.db.profile.drIcons[category])
     frame.Border:SetVertexColor(unpack(severityColor[frame.severity]))
 
     frame.severity = frame.severity + 1
