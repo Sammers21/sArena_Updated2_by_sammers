@@ -720,9 +720,13 @@ function sArenaFrameMixin:FindAura()
         local filter = (i == 1 and "HELPFUL" or "HARMFUL")
 
         for n = 1, 30 do
-            local _, texture, _, _, duration, expirationTime, _, _, _, spellID = UnitAura(unit, n, filter)
-
-            if (not spellID) then break end
+            local auraData = UnitAura(unit, n, filter)
+            if auraData then
+                local spellID = auraData.spellId
+                local duration = auraData.duration
+                local expirationTime = auraData.expirationTime
+                local texture = auraData.icon
+            if ( not spellID ) then break end
 
             if (auraList[spellID]) then
                 if (not currentSpellID or auraList[spellID] < auraList[currentSpellID]) then
@@ -734,6 +738,7 @@ function sArenaFrameMixin:FindAura()
             end
         end
     end
+end
 
     if (currentSpellID) then
         self.currentAuraSpellID = currentSpellID
