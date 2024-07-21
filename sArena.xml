@@ -150,14 +150,18 @@
                 <MaskTexture parentKey="ClassIconMask" file="Interface\CharacterFrame\TempPortraitAlphaMask"/>
                 <Texture parentKey="myHealPredictionBar" inherits="MyHealPredictionBarTemplate"/>
                 <Texture parentKey="otherHealPredictionBar" inherits="OtherHealPredictionBarTemplate"/>
-                <!-- <Texture parentKey="totalAbsorbBar" inherits="TotalAbsorbBarTemplate"/> -->
+                <Texture parentKey="totalAbsorbBar" inherits="TotalAbsorbBarTemplate">
+                    <KeyValues>
+                        <KeyValue key="fillTexture" value="Interface\RaidFrame\Shield-Fill" type="string"/>
+                    </KeyValues>
+                </Texture>
             </Layer>
 
-            <!-- <Layer level="ARTWORK" textureSubLevel="1">
+            <Layer level="ARTWORK" textureSubLevel="1">
                 <Texture parentKey="healAbsorbBar" inherits="HealAbsorbBarTemplate"/>
-                <Texture parentKey="healAbsorbBarLeftShadow" inherits="HealAbsorbBarLeftShadowTemplate"/>
-                <Texture parentKey="healAbsorbBarRightShadow" inherits="HealAbsorbBarRightShadowTemplate"/>
-            </Layer> -->
+                <!-- <Texture parentKey="healAbsorbBarLeftShadow" inherits="HealAbsorbBarLeftShadowTemplate"/> -->
+                <!-- <Texture parentKey="healAbsorbBarRightShadow" inherits="HealAbsorbBarRightShadowTemplate"/> -->
+            </Layer>
 
 
             <Layer level="ARTWORK" textureSubLevel="3">
