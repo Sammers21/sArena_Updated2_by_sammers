@@ -994,15 +994,12 @@ function sArenaMixin:Test()
         local frame = self["arena" .. i]
         frame:Show()
 
-        -- Set health to 50% and absorb to 25%
-        local maxHealth = 100
-        local currentHealth = 50
 
-        frame.HealthBar:SetMinMaxValues(0, maxHealth)
-        frame.HealthBar:SetValue(currentHealth)
+        frame.HealthBar:SetMinMaxValues(0, 100)
+        frame.HealthBar:SetValue(100)
 
         frame.PowerBar:SetMinMaxValues(0, 100)
-        frame.PowerBar:SetValue(50)
+        frame.PowerBar:SetValue(100)
 
         frame.ClassIcon:SetTexture(classIcons["MAGE"])
 
