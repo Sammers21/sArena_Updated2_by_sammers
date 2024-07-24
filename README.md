@@ -27,4 +27,4 @@ Updated version of sArena Updated (Retail and TBC) edited by sammers. Changes:
 - Credits also go to `@SweepyBoop` & `@EthanRule` for their dragonflight fixes
 - Credits to `@yaggertv` for df fixes too
 - Credits to `@BlinkyTV_` on twitch for helping with testing and finding ppl for wargames
-- Credits to `@Bicmex` on twitch for the `IsHealer` function he wrote
+- Credits to `@Bicmex` on twitch for the `IsHealer` function that he wrote.
