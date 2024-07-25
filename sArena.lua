@@ -41,7 +41,7 @@ local emptyLayoutOptionsTable = {
     },
 }
 local blizzFrame
-local FEIGN_DEATH = GetSpellInfo(5384) -- Localized name for Feign Death
+local FEIGN_DEATH = C_Spell.GetSpellName(5384) -- Localized name for Feign Death
 
 -- make local vars of globals that are used with high frequency
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
@@ -49,7 +49,7 @@ local UnitGUID = UnitGUID
 local UnitChannelInfo = UnitChannelInfo
 local GetTime = GetTime
 local After = C_Timer.After
-local UnitAura = UnitAura
+local UnitAura = C_UnitAuras.GetAuraDataByIndex
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitPowerMax = UnitPowerMax
@@ -59,12 +59,12 @@ local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 local FindAuraByName = AuraUtil.FindAuraByName
 local ceil = ceil
 local AbbreviateLargeNumbers = AbbreviateLargeNumbers
-local UnitFrameHealPredictionBars_Update = UnitFrameHealPredictionBars_Update
+local UnitFrameHealPredictionBars_Update = UnitFrameHealPredictionBars_Update_Sarena
 
 local function UpdateBlizzVisibility(instanceType)
     -- hide blizz arena frames while in arena
     if (InCombatLockdown()) then return end
-    if (IsAddOnLoaded("ElvUI")) then return end
+    if (C_AddOns.IsAddOnLoaded("ElvUI")) then return end
 
     if (not blizzFrame) then
         blizzFrame = CreateFrame("Frame", nil, UIParent)
@@ -253,7 +253,7 @@ end
 -- Arena Frames
 
 local function ResetTexture(texturePool, t)
-    if (texturePool) then
+    if texturePool and texturePool.parent then
         t:SetParent(texturePool.parent)
     end
 
@@ -302,30 +302,24 @@ function sArenaFrameMixin:OnLoad()
 
     self.myHealPredictionBar:ClearAllPoints()
     self.otherHealPredictionBar:ClearAllPoints()
-    -- self.totalAbsorbBar:ClearAllPoints()
+    self.totalAbsorbBar:ClearAllPoints()
     self.overAbsorbGlow:ClearAllPoints()
     -- self.healAbsorbBar:ClearAllPoints()
-    -- self.healAbsorbBar = _G["healAbsorbBar"];
-    -- self.healAbsorbBar:SetStatusBar(self.healthbar);
-    -- self.healAbsorbBar:ClearAllPoints()
     self.overHealAbsorbGlow:ClearAllPoints()
-	-- self.totalAbsorbBar = _G["totalAbsorbBar"];
-    -- self.totalAbsorbBar:ClearAllPoints()
-	-- self.totalAbsorbBar:SetStatusBar(self.healthbar);
-    -- self.totalAbsorbBar:Hide()
-    -- self.totalAbsorbBar.overlay = self.totalAbsorbBarOverlay
-    -- self.totalAbsorbBarOverlay:SetAllPoints(self.totalAbsorbBar)
-    -- self.totalAbsorbBarOverlay.tileSize = 32
-    
+    -- self.healAbsorbBarLeftShadow:ClearAllPoints()
+    -- self.healAbsorbBarRightShadow:ClearAllPoints()
+
+    self.totalAbsorbBar:SetTexture(self.totalAbsorbBar.fillTexture)
+    self.totalAbsorbBar:SetVertexColor(1, 1, 1, 0.5)  -- Adjust color and opacity as needed
+    self.totalAbsorbBar:SetHeight(self.healthbar:GetHeight())
 
     self.overAbsorbGlow:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
     self.overAbsorbGlow:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
 
-    -- self.myHealAbsorb:SetTexture("Interface\\RaidFrame\\Absorb-Fill", true, true)
+    -- self.healAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill", true, true)
 
     self.overHealAbsorbGlow:SetPoint("BOTTOMRIGHT", self.healthbar, "BOTTOMLEFT", 7, 0)
     self.overHealAbsorbGlow:SetPoint("TOPRIGHT", self.healthbar, "TOPLEFT", 7, 0)
-    self.overHealAbsorbGlow:Hide()
 
     self.TexturePool = CreateTexturePool(self, "ARTWORK", nil, nil, ResetTexture)
 end
@@ -350,7 +344,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
             -- arg1 == spellID
             if (arg1 ~= self.Trinket.spellID) then
-                local _, spellTextureNoOverride = GetSpellTexture(arg1)
+                local _, spellTextureNoOverride = C_Spell.GetSpellTexture(arg1)
                 self.Trinket.spellID = arg1
                 self.Trinket.Texture:SetTexture(spellTextureNoOverride)
             end
@@ -362,13 +356,15 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
             local currHp = UnitHealth(unit)
             if (currHp ~= self.currHp) then
                 self.HealthBar:SetValue(currHp)
-                UnitFrameHealPredictionBars_Update(self)
+                UnitFrameHealPredictionBars_Update_Sarena(self)
+                self:UpdateAbsorb(unit)
                 self.currHp = currHp
             end
         elseif (event == "UNIT_MAXHEALTH") then
             self.HealthBar:SetMinMaxValues(0, UnitHealthMax(unit))
             self.HealthBar:SetValue(UnitHealth(unit))
-            UnitFrameHealPredictionBars_Update(self)
+            UnitFrameHealPredictionBars_Update_Sarena(self)
+            self:UpdateAbsorb(unit)
         elseif (event == "UNIT_POWER_UPDATE") then
             self:SetStatusText()
             self.PowerBar:SetValue(UnitPower(unit))
@@ -381,9 +377,11 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
             self.PowerBar:SetMinMaxValues(0, UnitPowerMax(unit))
             self.PowerBar:SetValue(UnitPower(unit))
         elseif (event == "UNIT_ABSORB_AMOUNT_CHANGED") then
-            UnitFrameHealPredictionBars_Update(self)
+            UnitFrameHealPredictionBars_Update_Sarena(self)
+            self:UpdateAbsorb(unit)
         elseif (event == "UNIT_HEAL_ABSORB_AMOUNT_CHANGED") then
-            UnitFrameHealPredictionBars_Update(self)
+            UnitFrameHealPredictionBars_Update_Sarena(self)
+            self:UpdateAbsorb(unit)
         end
     elseif (event == "PLAYER_LOGIN") then
         self:UnregisterEvent("PLAYER_LOGIN")
@@ -405,7 +403,8 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
         self:ResetTrinket()
         self:ResetRacial()
         self:ResetDR()
-        UnitFrameHealPredictionBars_Update(self)
+        UnitFrameHealPredictionBars_Update_Sarena(self)
+        self:UpdateAbsorb(unit)
     elseif (event == "PLAYER_REGEN_ENABLED") then
         self:UnregisterEvent("PLAYER_REGEN_ENABLED")
 
@@ -421,6 +420,12 @@ function sArenaFrameMixin:Initialize()
     self.parent:SetupDrag(self.SpecIcon, self.SpecIcon, "specIcon", "UpdateSpecIconSettings")
     self.parent:SetupDrag(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
     self.parent:SetupDrag(self.Racial, self.Racial, "racial", "UpdateRacialSettings")
+    if not self.totalAbsorbBar then
+        self.totalAbsorbBar = self:CreateTexture(nil, "ARTWORK")
+        self.totalAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill")
+        self.totalAbsorbBar:SetVertexColor(1, 1, 1, 0.5)
+        self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
+    end
 end
 
 function sArenaFrameMixin:OnEnter()
@@ -484,6 +489,8 @@ function sArenaFrameMixin:UpdatePlayer(unitEvent)
     self:OnEvent("UNIT_MAXPOWER", unit)
     self:OnEvent("UNIT_POWER_UPDATE", unit)
     self:OnEvent("UNIT_DISPLAYPOWER", unit)
+    self:UpdateAbsorb(unit)
+    UnitFrameHealPredictionBars_Update_Sarena(self)
 
     local color = RAID_CLASS_COLORS[select(2, UnitClass(unit))]
 
@@ -509,6 +516,162 @@ function sArenaFrameMixin:SetMysteryPlayer()
     self:SetStatusText()
 
     self.DeathIcon:Hide()
+end
+
+
+function sArenaFrameMixin:UpdateAbsorb(unit)
+    local maxHealth = UnitHealthMax(unit)
+    local currentHealth = UnitHealth(unit)
+    local absorbAmount = UnitGetTotalAbsorbs(unit)
+    local myCurrentHealAbsorb = UnitGetTotalHealAbsorbs(unit) or 0
+    local allIncomingHeal = UnitGetIncomingHeals(unit) or 0
+
+    -- We don't fill outside the health bar with absorbs. Instead, an overAbsorbGlow is shown.
+    local overAbsorb = false
+    if (currentHealth - myCurrentHealAbsorb + allIncomingHeal + absorbAmount >= maxHealth or currentHealth + absorbAmount >= maxHealth) then
+        if (absorbAmount > 0) then
+            overAbsorb = true
+        end
+        if (allIncomingHeal > myCurrentHealAbsorb) then
+            absorbAmount = math.max(0, maxHealth - (currentHealth - myCurrentHealAbsorb + allIncomingHeal))
+        else
+            absorbAmount = math.max(0, maxHealth - currentHealth)
+        end
+    end
+
+    if (overAbsorb) then
+        self.overAbsorbGlow:Show()
+    else
+        self.overAbsorbGlow:Hide()
+    end
+
+    if absorbAmount > 0 then
+        local absorbWidth = self.HealthBar:GetWidth() * (absorbAmount / maxHealth)
+        self.totalAbsorbBar:SetWidth(absorbWidth)
+        self.totalAbsorbBar:ClearAllPoints()
+        self.totalAbsorbBar:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT", self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
+        self.totalAbsorbBar:Show()
+    else
+        self.totalAbsorbBar:Hide()
+    end
+end
+
+local MAX_INCOMING_HEAL_OVERFLOW = 1.0;
+function UnitFrameHealPredictionBars_Update_Sarena(frame)
+	if ( not frame.myHealPredictionBar and not frame.otherHealPredictionBar and not frame.healAbsorbBar and not frame.totalAbsorbBar ) then
+		return;
+	end
+
+	local _, maxHealth = frame.healthbar:GetMinMaxValues();
+	local health = frame.healthbar:GetValue();
+	if ( maxHealth <= 0 ) then
+		return;
+	end
+
+	local myIncomingHeal = UnitGetIncomingHeals(frame.unit, "player") or 0;
+	local allIncomingHeal = UnitGetIncomingHeals(frame.unit) or 0;
+	local totalAbsorb = UnitGetTotalAbsorbs(frame.unit) or 0;
+
+	local myCurrentHealAbsorb = 0;
+	if ( frame.healAbsorbBar ) then
+		myCurrentHealAbsorb = UnitGetTotalHealAbsorbs(frame.unit) or 0;
+
+		--We don't fill outside the health bar with healAbsorbs.  Instead, an overHealAbsorbGlow is shown.
+		if ( health < myCurrentHealAbsorb ) then
+			frame.overHealAbsorbGlow:Show();
+			myCurrentHealAbsorb = health;
+		else
+			frame.overHealAbsorbGlow:Hide();
+		end
+	end
+
+	--See how far we're going over the health bar and make sure we don't go too far out of the frame.
+	if ( health - myCurrentHealAbsorb + allIncomingHeal > maxHealth * MAX_INCOMING_HEAL_OVERFLOW ) then
+		allIncomingHeal = maxHealth * MAX_INCOMING_HEAL_OVERFLOW - health + myCurrentHealAbsorb;
+	end
+
+	local otherIncomingHeal = 0;
+
+	--Split up incoming heals.
+	if ( allIncomingHeal >= myIncomingHeal ) then
+		otherIncomingHeal = allIncomingHeal - myIncomingHeal;
+	else
+		myIncomingHeal = allIncomingHeal;
+	end
+
+	--We don't fill outside the the health bar with absorbs.  Instead, an overAbsorbGlow is shown.
+	local overAbsorb = false;
+	if ( health - myCurrentHealAbsorb + allIncomingHeal + totalAbsorb >= maxHealth or health + totalAbsorb >= maxHealth ) then
+		if ( totalAbsorb > 0 ) then
+			overAbsorb = true;
+		end
+
+		if ( allIncomingHeal > myCurrentHealAbsorb ) then
+			totalAbsorb = max(0,maxHealth - (health - myCurrentHealAbsorb + allIncomingHeal));
+		else
+			totalAbsorb = max(0,maxHealth - health);
+		end
+	end
+
+	if ( overAbsorb ) then
+		frame.overAbsorbGlow:Show();
+	else
+		frame.overAbsorbGlow:Hide();
+	end
+
+	local healthTexture = frame.healthbar:GetStatusBarTexture();
+	local myCurrentHealAbsorbPercent = 0;
+	local healAbsorbTexture = nil;
+
+	if ( frame.healAbsorbBar ) then
+		myCurrentHealAbsorbPercent = myCurrentHealAbsorb / maxHealth;
+
+		--If allIncomingHeal is greater than myCurrentHealAbsorb, then the current
+		--heal absorb will be completely overlayed by the incoming heals so we don't show it.
+		if ( myCurrentHealAbsorb > allIncomingHeal ) then
+			local shownHealAbsorb = myCurrentHealAbsorb - allIncomingHeal;
+			local shownHealAbsorbPercent = shownHealAbsorb / maxHealth;
+
+			healAbsorbTexture = frame.healAbsorbBar:UpdateFillPosition(healthTexture, shownHealAbsorb, -shownHealAbsorbPercent);
+
+			--If there are incoming heals the left shadow would be overlayed by the incoming heals
+			--so it isn't shown.
+			-- frame.healAbsorbBar.LeftShadow:SetShown(allIncomingHeal <= 0);
+
+			-- The right shadow is only shown if there are absorbs on the health bar.
+			-- frame.healAbsorbBar.RightShadow:SetShown(totalAbsorb > 0)
+		else
+			frame.healAbsorbBar:Hide();
+		end
+	end
+
+	--Show myIncomingHeal on the health bar.
+	local incomingHealTexture;
+	if ( frame.myHealPredictionBar ) then
+		incomingHealTexture = frame.myHealPredictionBar:UpdateFillPosition(healthTexture, myIncomingHeal, -myCurrentHealAbsorbPercent);
+	end
+
+	local otherHealLeftTexture = (myIncomingHeal > 0) and incomingHealTexture or healthTexture;
+	local xOffset = (myIncomingHeal > 0) and 0 or -myCurrentHealAbsorbPercent;
+
+	--Append otherIncomingHeal on the health bar
+	if ( frame.otherHealPredictionBar ) then
+		incomingHealTexture = frame.otherHealPredictionBar:UpdateFillPosition(otherHealLeftTexture, otherIncomingHeal, xOffset);
+	end
+
+	--Append absorbs to the correct section of the health bar.
+	local appendTexture = nil;
+	if ( healAbsorbTexture ) then
+		--If there is a healAbsorb part shown, append the absorb to the end of that.
+		appendTexture = healAbsorbTexture;
+	else
+		--Otherwise, append the absorb to the end of the the incomingHeals or health part;
+		appendTexture = incomingHealTexture or healthTexture;
+	end
+
+	if ( frame.totalAbsorbBar ) then
+		frame.totalAbsorbBar:UpdateFillPosition(appendTexture, totalAbsorb);
+	end
 end
 
 function sArenaFrameMixin:GetClassAndSpec()
@@ -608,7 +771,7 @@ function sArenaFrameMixin:UpdateTrinket()
     if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellID .. " startTime: " .. startTime .. " duration: " .. duration) end
     if (spellID) then
         if (spellID ~= trinket.spellID) then
-            local _, spellTextureNoOverride = GetSpellTexture(spellID)
+            local _, spellTextureNoOverride = C_Spell.GetSpellTexture(spellID)
             trinket.spellID = spellID
             trinket.Texture:SetTexture(spellTextureNoOverride)
         end
@@ -720,9 +883,13 @@ function sArenaFrameMixin:FindAura()
         local filter = (i == 1 and "HELPFUL" or "HARMFUL")
 
         for n = 1, 30 do
-            local _, texture, _, _, duration, expirationTime, _, _, _, spellID = UnitAura(unit, n, filter)
-
-            if (not spellID) then break end
+            local auraData = UnitAura(unit, n, filter)
+            if auraData then
+                local spellID = auraData.spellId
+                local duration = auraData.duration
+                local expirationTime = auraData.expirationTime
+                local texture = auraData.icon
+            if ( not spellID ) then break end
 
             if (auraList[spellID]) then
                 if (not currentSpellID or auraList[spellID] < auraList[currentSpellID]) then
@@ -734,6 +901,7 @@ function sArenaFrameMixin:FindAura()
             end
         end
     end
+end
 
     if (currentSpellID) then
         self.currentAuraSpellID = currentSpellID
@@ -763,7 +931,7 @@ function sArenaFrameMixin:FindInterrupt(event, spellID)
         self.currentInterruptSpellID = spellID
         self.currentInterruptDuration = interruptDuration
         self.currentInterruptExpirationTime = GetTime() + interruptDuration
-        self.currentInterruptTexture = GetSpellTexture(spellID)
+        self.currentInterruptTexture = C_Spell.GetSpellTexture(spellID)
         self:FindAura()
         After(interruptDuration, function()
             self.currentInterruptSpellID = nil
@@ -816,6 +984,7 @@ function sArenaFrameMixin:UpdateStatusTextVisible()
     self.PowerText:SetShown(db.profile.statusText.alwaysShow)
 end
 
+
 function sArenaMixin:Test()
     if (InCombatLockdown()) then return end
 
@@ -824,6 +993,7 @@ function sArenaMixin:Test()
     for i = 1, 3 do
         local frame = self["arena" .. i]
         frame:Show()
+
 
         frame.HealthBar:SetMinMaxValues(0, 100)
         frame.HealthBar:SetValue(100)

@@ -26,6 +26,16 @@ local drCategories = {
     ["Silence"] = "Silences",
     ["Root"] = "Roots",
 }
+
+local drIcons = {
+    Stun = 132298,
+    Incapacitate = 136071,
+    Disorient = 136183,
+    Silence = 458230,
+    Root = 136100,
+}
+
+
 local racialCategories = {
     ["Human"] = "Human",
     ["Scourge"] = "Undead",
@@ -50,7 +60,8 @@ local racialCategories = {
     ["KulTiran"] = "KulTiran",
     ["Mechagnome"] = "Mechagnome",
     ["Vulpera"] = "Vulpera",
-	["Dracthyr"] = "Dracthyr"
+    ["Dracthyr"] = "Dracthyr",
+    ["Earthen"] = "Earthen"
 }
 
 function sArenaMixin:GetLayoutOptionsTable(layoutName)
@@ -627,6 +638,27 @@ function sArenaMixin:UpdateRacialSettings(db, info, val)
     end
 end
 
+local function setDRIcons()
+    local drIconsOrder = {"Stun", "Incapacitate", "Disorient", "Silence", "Root"}
+    local inputs = {
+        drIconsTitle = {
+            order = 1,
+            type = "description",
+            name = "Configure DR Icons",
+            fontSize = "medium",
+        }
+    }
+    for index, drName in ipairs(drIconsOrder) do
+        inputs[drName] = {
+            order = index + 1,
+            name = drName .. ":",
+            type = "input",
+            width = "full",
+        }
+    end
+    return inputs
+end
+
 sArenaMixin.optionsTable = {
     type = "group",
     childGroups = "tab",
@@ -759,7 +791,28 @@ sArenaMixin.optionsTable = {
                             desc = "DR icons will show which spell triggered the DR",
                             type = "toggle",
                             get = function(info) return info.handler.db.profile.drDynamicIcons end,
-                            set = function(info, val) info.handler.db.profile.drDynamicIcons = val end,
+                            set = function(info, val)
+                                info.handler.db.profile.drDynamicIcons = val
+                                -- Force a refresh of the options
+                                LibStub("AceConfigRegistry-3.0"):NotifyChange("sArena")
+                            end,
+                        },
+                        drIconsSection = {
+                            order = 3,
+                            type = "group",
+                            name = "DR Icons Settings",
+                            inline = true,
+                            disabled = function(info) return info.handler.db.profile.drDynamicIcons end,
+                            get = function(info)
+                                local key = info[#info]
+                                return tostring(info.handler.db.profile.drIcons[key] or drIcons[key])
+                            end,
+                            set = function(info, value)
+                                local key = info[#info]
+                                local num = tonumber(value)
+                                info.handler.db.profile.drIcons[key] = num or value
+                            end,
+                            args = setDRIcons(),
                         },
                     },
                 },
