@@ -433,7 +433,6 @@ function sArenaFrameMixin:Initialize()
         self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
         self.totalAbsorbBarOverlay:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
         self.totalAbsorbBarOverlay:SetVertexColor(1, 1, 1, 1)
-        self.totalAbsorbBarOverlay.tileSize = 32
     end
 end
 
