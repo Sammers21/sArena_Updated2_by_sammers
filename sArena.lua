@@ -425,13 +425,15 @@ function sArenaFrameMixin:Initialize()
     if not self.totalAbsorbBar then
         self.totalAbsorbBar = self:CreateTexture(nil, "ARTWORK")
         self.totalAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill")
-        self.totalAbsorbBar:SetVertexColor(1, 1, 1, 0.5)
+        self.totalAbsorbBar:SetVertexColor(1, 1, 1, 1)
         self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
         self.totalAbsorbBarOverlay = self:CreateTexture(nil, "ARTWORK")
         self.totalAbsorbBarOverlay:SetTexture("Interface\\RaidFrame\\Shield-Overlay")
         self.totalAbsorbBarOverlay:SetHeight(self.HealthBar:GetHeight())
         self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
         self.totalAbsorbBarOverlay:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
+        self.totalAbsorbBarOverlay:SetVertexColor(1, 1, 1, 1)
+        self.totalAbsorbBarOverlay.tileSize = 32
     end
 end
 
