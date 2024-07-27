@@ -170,7 +170,7 @@
                 <FontString parentKey="PowerText"/>
                 <Texture parentKey="overAbsorbGlow" inherits="OverAbsorbGlowTemplate"/>
                 <Texture parentKey="overHealAbsorbGlow" inherits="OverHealAbsorbGlowTemplate"/>
-                <!-- <Texture parentKey="totalAbsorbBarOverlay" inherits="TotalAbsorbBarOverlayTemplate"/> -->
+                <Texture parentKey="totalAbsorbBarOverlay" inherits="TotalAbsorbBarOverlayTemplate"/>
             </Layer>
 
             <Layer level="OVERLAY" textureSubLevel="2">

@@ -299,7 +299,6 @@ function sArenaFrameMixin:OnLoad()
     self.CastBar:SetUnit(unit, false, true)
 
     self.healthbar = self.HealthBar
-
     self.myHealPredictionBar:ClearAllPoints()
     self.otherHealPredictionBar:ClearAllPoints()
     self.totalAbsorbBar:ClearAllPoints()
@@ -312,6 +311,9 @@ function sArenaFrameMixin:OnLoad()
     self.totalAbsorbBar:SetTexture(self.totalAbsorbBar.fillTexture)
     self.totalAbsorbBar:SetVertexColor(1, 1, 1, 0.5)  -- Adjust color and opacity as needed
     self.totalAbsorbBar:SetHeight(self.healthbar:GetHeight())
+
+    self.overAbsorbGlow:SetTexture("Interface\\RaidFrame\\Shield-Overshield")
+    self.overAbsorbGlow:SetBlendMode("ADD")
 
     self.overAbsorbGlow:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
     self.overAbsorbGlow:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
@@ -424,7 +426,15 @@ function sArenaFrameMixin:Initialize()
         self.totalAbsorbBar = self:CreateTexture(nil, "ARTWORK")
         self.totalAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill")
         self.totalAbsorbBar:SetVertexColor(1, 1, 1, 0.5)
+        self.totalAbsorbBar:SetVertexColor(1, 1, 1, 1)
         self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
+        self.totalAbsorbBarOverlay = self:CreateTexture(nil, "ARTWORK")
+        self.totalAbsorbBarOverlay:SetTexture("Interface\\RaidFrame\\Shield-Overlay", true, true)
+        self.totalAbsorbBarOverlay:SetHeight(self.HealthBar:GetHeight())
+        self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
+        self.totalAbsorbBarOverlay:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
+        self.totalAbsorbBarOverlay:SetVertexColor(1, 1, 1, 1)
+        self.totalAbsorbBarOverlay.tileSize = 32
     end
 end
 
@@ -551,8 +561,13 @@ function sArenaFrameMixin:UpdateAbsorb(unit)
         self.totalAbsorbBar:ClearAllPoints()
         self.totalAbsorbBar:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT", self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
         self.totalAbsorbBar:Show()
+        self.totalAbsorbBarOverlay:SetWidth(absorbWidth)
+        self.totalAbsorbBarOverlay:ClearAllPoints()
+        self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT", self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
+        self.totalAbsorbBarOverlay:Show()
     else
         self.totalAbsorbBar:Hide()
+        self.totalAbsorbBarOverlay:Hide()
     end
 end
 
