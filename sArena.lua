@@ -173,10 +173,55 @@ function sArenaMixin:RefreshConfig()
     self:SetLayout(nil, db.profile.currentLayout)
 end
 
+function sArenaMixin:layoutReload(layout)
+    if self.reloadPopup then
+        self.reloadPopup:Hide()
+        self.reloadPopup:SetParent(nil)
+        self.reloadPopup = nil
+    end
+    local frame = CreateFrame("Frame", "ReloadPopup", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(350, 150)
+    frame:SetPoint("CENTER", 0, 100)
+    frame:SetFrameStrata("DIALOG")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("TOOLTIP")
+
+    frame.TitleText:SetText("sArena")
+
+    local text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    text:SetPoint("TOP", 0, -30)
+    text:SetWidth(300)
+    text:SetJustifyH("CENTER")
+    text:SetText("Layout switched to " .. layout .. ". Switching layout requires a reload. Reload now to avoid issues.")
+
+    local reloadButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    reloadButton:SetSize(100, 25)
+    reloadButton:SetPoint("BOTTOMLEFT", 20, 20)
+    reloadButton:SetText("Reload")
+    reloadButton:SetScript("OnClick", function()
+        ReloadUI()
+    end)
+
+    local cancelButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    cancelButton:SetSize(100, 25)
+    cancelButton:SetPoint("BOTTOMRIGHT", -20, 20)
+    cancelButton:SetText("Cancel")
+    cancelButton:SetScript("OnClick", function()
+        frame:Hide()
+    end)
+    self.reloadPopup = frame
+    frame:Show()
+end
+
 function sArenaMixin:SetLayout(_, layout)
     if (InCombatLockdown()) then return end
 
     layout = sArenaMixin.layouts[layout] and layout or "BlizzArena"
+    local oldLayout = self.db.profile.currentLayout
 
     db.profile.currentLayout = layout
     self.layoutdb = self.db.profile.layoutSettings[layout]
@@ -195,6 +240,9 @@ function sArenaMixin:SetLayout(_, layout)
     local _, instanceType = IsInInstance()
     if (instanceType ~= "arena" and self.arena1:IsShown()) then
         self:Test()
+    end
+    if oldLayout ~= layout then
+        self:layoutReload(layout)
     end
 end
 
