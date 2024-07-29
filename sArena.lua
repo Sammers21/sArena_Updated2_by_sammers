@@ -196,7 +196,7 @@ function sArenaMixin:layoutReload(layout)
     text:SetPoint("TOP", 0, -30)
     text:SetWidth(300)
     text:SetJustifyH("CENTER")
-    text:SetText("Layout switched to " .. layout .. ". Switching layout requires a reload. Reload now to avoid issues.")
+    text:SetText("Layout switched to " .. layout .. ". Switching layout requires a reload. Reload now to avoid issues?")
 
     local reloadButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     reloadButton:SetSize(100, 25)
