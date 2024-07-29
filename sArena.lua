@@ -471,18 +471,10 @@ function sArenaFrameMixin:Initialize()
     self.parent:SetupDrag(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
     self.parent:SetupDrag(self.Racial, self.Racial, "racial", "UpdateRacialSettings")
     if not self.totalAbsorbBar then
-        self.totalAbsorbBar = self:CreateTexture(nil, "ARTWORK")
         self.totalAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill")
         self.totalAbsorbBar:SetVertexColor(1, 1, 1, 1)
-        self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
-        self.totalAbsorbBarOverlay = self:CreateTexture(nil, "ARTWORK")
-        self.totalAbsorbBar.overlay = self.totalAbsorbBarOverlay
         self.totalAbsorbBarOverlay:SetTexture("Interface\\RaidFrame\\Shield-Overlay", true, true)
-        self.totalAbsorbBarOverlay:SetHeight(self.HealthBar:GetHeight())
-        self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
-        self.totalAbsorbBarOverlay:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
-        self.totalAbsorbBarOverlay:SetVertexColor(1, 1, 1, 0)
-        self.totalAbsorbBarOverlay:SetBlendMode("ADD")
+        self.totalAbsorbBarOverlay:SetVertexColor(1, 1, 1, 1)
         self.totalAbsorbBarOverlay.tileSize = 32
     end
 end
