@@ -606,7 +606,7 @@ function sArenaFrameMixin:UpdateAbsorb(unit)
         self.totalAbsorbBarOverlay:SetWidth(absorbWidth)
         self.totalAbsorbBarOverlay:ClearAllPoints()
         self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT", self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
-        self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
+        self.totalAbsorbBarOverlay:SetHeight(self.HealthBar:GetHeight())
         self.totalAbsorbBarOverlay:Show()
     else
         self.totalAbsorbBar:Hide()
