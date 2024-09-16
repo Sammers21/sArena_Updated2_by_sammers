@@ -1,7 +1,7 @@
-## Interface: 110000 110002
+## Interface: 110002
 ## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced arena frames
-## Author: Stako
+## Author: Sammers
 ## Version: 3.2.3
 ## OptionalDeps: ElvUI
 ## X-Category: PvP/Arena

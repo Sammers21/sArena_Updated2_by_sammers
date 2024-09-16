@@ -4,6 +4,8 @@ sArenaMixin.drCategories = {
     "Disorient",
     "Silence",
     "Root",
+    "Knock",
+    "Disarm",
 }
 
 sArenaMixin.defaultSettings.profile.drCategories = {
@@ -12,6 +14,8 @@ sArenaMixin.defaultSettings.profile.drCategories = {
     Disorient = true,
     Silence = true,
     Root = true,
+    Knock = true,
+    Disarm = true,
 }
 sArenaMixin.defaultSettings.profile.drDynamicIcons = false
 
@@ -30,6 +34,8 @@ sArenaMixin.defaultSettings.profile.drIcons = {
     Disorient = 136183,
     Silence = 458230,
     Root = 136100,
+    Knock = 237589,
+    Disarm = 132343,
 }
 
 local GetTime = GetTime
@@ -115,7 +121,7 @@ function sArenaFrameMixin:ResetDR()
 end
 
 drList = {
-    [207167]  = "Disorient",       -- Blinding Sleet
+        [207167]  = "Disorient",       -- Blinding Sleet
     [207685]  = "Disorient",       -- Sigil of Misery
     [33786]   = "Disorient",       -- Cyclone
     [209753]  = "Disorient",       -- Cyclone (Honor talent)
@@ -129,6 +135,7 @@ drList = {
     [2094]    = "Disorient",       -- Blind
     [118699]  = "Disorient",       -- Fear
     [130616]  = "Disorient",       -- Fear (Warlock Horrify talent)
+    [5484]  = "Disorient",       -- Howl of Terror
     [6358]    = "Disorient",       -- Seduction (Succubus)
     [115268]  = "Disorient",       -- Mesmerize (Shivarra)
     [5246]    = "Disorient",       -- Intimidating Shout
@@ -261,11 +268,20 @@ drList = {
 	[285515]  = "Root",            -- Surge of Power (Frost Shock Root)
     [241887]  = "Root",            -- Landslide
 
-    --[[
     [207777]  = "Disarm",          -- Dismantle
     [233759]  = "Disarm",          -- Grapple Weapon
     [236077]  = "Disarm",          -- Disarm
     [236236]  = "Disarm",          -- Disarm (Prot)
     [209749]  = "Disarm",          -- Faerie Swarm (Balance)
-    ]]
+    [407032]  = "Disarm",          -- Sticky Tar Bomb
+    [407031]  = "Disarm",          -- Sticky Tar Bomb
+    
+	[51490]  = "Knock",          -- Thunderstorm
+--	[102793]  = "Knock",          -- Vortex
+	[116844]  = "Knock",          -- Ring of Peace
+	[132469]  = "Knock",          -- Typhoon
+	[61391]  = "Knock",          -- Typhoon
+	[357214]  = "Knock",          -- Evoker Racial
+	[236776]  = "Knock",          -- High explosive trap
+	[127797]  = "Knock",          -- Vortex
 }

@@ -223,6 +223,8 @@
             <Frame parentKey="Disorient" inherits="sArenaDRTrackerTemplate"/>
             <Frame parentKey="Stun" inherits="sArenaDRTrackerTemplate" enablemouse="true" movable="true"/>
             <Frame parentKey="Root" inherits="sArenaDRTrackerTemplate"/>
+            <Frame parentKey="Knock" inherits="sArenaDRTrackerTemplate"/>
+            <Frame parentKey="Disarm" inherits="sArenaDRTrackerTemplate"/>
         </Frames>
 
         <Scripts>

@@ -25,6 +25,8 @@ local drCategories = {
     ["Disorient"] = "Disorients",
     ["Silence"] = "Silences",
     ["Root"] = "Roots",
+    ["Knock"] = "Knocks",
+    ["Disarm"] = "Disarms",
 }
 
 local drIcons = {
@@ -33,6 +35,8 @@ local drIcons = {
     Disorient = 136183,
     Silence = 458230,
     Root = 136100,
+    Knock = 237589,
+    Disarm = 132343,
 }
 
 
@@ -567,6 +571,8 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
         "Disorient",
         "Silence",
         "Root",
+        "Knock",
+        "Disarm",
     }
 
     if ( val ) then
@@ -639,7 +645,7 @@ function sArenaMixin:UpdateRacialSettings(db, info, val)
 end
 
 local function setDRIcons()
-    local drIconsOrder = {"Stun", "Incapacitate", "Disorient", "Silence", "Root"}
+    local drIconsOrder = {"Stun", "Incapacitate", "Disorient", "Silence", "Root", "Knock", "Disarm"}
     local inputs = {
         drIconsTitle = {
             order = 1,

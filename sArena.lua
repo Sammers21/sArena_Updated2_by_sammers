@@ -165,6 +165,7 @@ function sArenaMixin:Initialize()
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("sArena")
     LibStub("AceConfigDialog-3.0"):SetDefaultSize("sArena", 700, 620)
     LibStub("AceConsole-3.0"):RegisterChatCommand("sarena", ChatCommand)
+    LibStub("AceConsole-3.0"):RegisterChatCommand("sa", ChatCommand)
 
     self:SetLayout(nil, db.profile.currentLayout)
 end
