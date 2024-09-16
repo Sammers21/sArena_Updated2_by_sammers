@@ -313,7 +313,6 @@ sArenaMixin.auraList = tInvert({
 	185422,  -- Rogue: Shadow Dance
 	457333, -- Death's Arrival
     197871, -- Priest: Dark Archangel
-    10060,  -- Priest: Power Infusion
     194249, -- Priest: Voidform
     
     384631,  -- Rogue: Flagellation
@@ -342,6 +341,7 @@ sArenaMixin.auraList = tInvert({
     375087, -- Evoker: Dragonrage
 	370553, -- Evoker: Tip the Scales
     375087, -- Evoker: Dragonrage
+    10060,  -- Priest: Power Infusion
     
 
     -- Defensive Buffs
@@ -484,7 +484,6 @@ sArenaMixin.auraList = tInvert({
 	319504, -- Shiv
 	410598, -- Soul Rip
 	329543, -- Divine Ascension
-	214621, -- Schism
 	236273, -- Duel	
 	77606, -- Dark Sim
 	12323, -- Piercing Howl
