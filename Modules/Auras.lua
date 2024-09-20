@@ -44,7 +44,7 @@ sArenaMixin.auraList = tInvert({
     30283,  -- Shadowfury (Stun)
     24394,  -- Intimidation (Stun)
     117526, -- Binding Shot (Stun)
-	117405, -- Binding Shot
+	-- 117405, -- Binding Shot
 	357021, -- Consecutive Concussion (Stun)
     211881, -- Fel Eruption (Stun)
     91800,  -- Gnaw (Stun)
