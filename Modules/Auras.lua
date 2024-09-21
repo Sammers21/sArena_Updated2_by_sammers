@@ -207,6 +207,7 @@ sArenaMixin.auraList = tInvert({
     213610, -- Priest: Holy Ward
     212295, -- Warlock: Nether Ward
     48707,  -- Death Knight: Anti-Magic Shell
+    410358,  -- Death Knight: Anti-Magic Shell
     5384,   -- Hunter: Feign Death
     353319, -- Monk: Peaceweaver
     378464, -- Evoker: Nullifying Shroud
