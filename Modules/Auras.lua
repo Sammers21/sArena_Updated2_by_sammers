@@ -283,6 +283,13 @@ sArenaMixin.auraList = tInvert({
 	355689, -- Landslide
 	393456, -- Entrapment
 
+    -- Refreshments
+    167152, -- Mage Food
+    274914, -- Rockskip Mineral Water
+	396920, -- Delicious Dragon Spittle
+	369162, -- drink
+    452382, -- drink
+
     -- Offensive Buffs
     51271,  -- Death Knight: Pillar of Frost
     -- 47568,  -- Death Knight: Empower Rune Weapon
@@ -423,13 +430,6 @@ sArenaMixin.auraList = tInvert({
 	201633, -- Earthen Wall
 	234084, -- Moon and Stars
 	281195, -- Survival of the Fittest
-
-    -- Refreshments
-    167152, -- Mage Food
-    274914, -- Rockskip Mineral Water
-	396920, -- Delicious Dragon Spittle
-	369162, -- drink
-	
 
     -- Miscellaneous
     199450, -- Ultimate Sacrifice
