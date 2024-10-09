@@ -289,6 +289,7 @@ sArenaMixin.auraList = tInvert({
 	396920, -- Delicious Dragon Spittle
 	369162, -- drink
     452382, -- drink
+    461063, -- quiet contemplation (earthen dwarf racial)
 
     -- Offensive Buffs
     51271,  -- Death Knight: Pillar of Frost
