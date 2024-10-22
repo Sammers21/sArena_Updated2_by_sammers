@@ -17,13 +17,13 @@ layout.defaultSettings = {
     trinket = {
         posX = 80,
         posY = 23,
-        scale = 1,
+        scale = 0.9,
         fontSize = 12,
     },
     racial = {
         posX = 89,
         posY = -19,
-        scale = 1,
+        scale = 0.9,
         fontSize = 12,
     },
     castBar = {
@@ -90,23 +90,23 @@ function layout:Initialize(frame)
 
     frame:SetSize(195, 67)
 	
-	-- some reused variables
+    -- some reused variables
     local healthBar = frame.HealthBar
-	local powerBar = frame.PowerBar
+    local powerBar = frame.PowerBar
     local f = frame.ClassIcon
 
     -- text adjustments
-	local healthText = frame.HealthText
+    local healthText = frame.HealthText
     healthText:SetPoint("CENTER", healthBar)
     healthText:SetShadowOffset(0, 0)
     healthText:SetDrawLayer("OVERLAY", 4)
 	
-	local powerText = frame.PowerText
+    local powerText = frame.PowerText
     powerText:SetPoint("CENTER", powerBar)
     powerText:SetShadowOffset(0, 0)
     powerText:SetDrawLayer("OVERLAY", 4)
 	
-	local playerName = frame.Name
+    local playerName = frame.Name
     playerName:SetJustifyH("LEFT")
     playerName:SetPoint("BOTTOMLEFT", healthBar, "TOPLEFT", 2, 2)
     playerName:SetPoint("BOTTOMRIGHT", healthBar, "TOPRIGHT", -2, 2)
@@ -122,7 +122,7 @@ function layout:Initialize(frame)
     frame.ClassIconMask:SetSize(60, 60)
 
     -- trinket
-	local trinket = frame.Trinket
+    local trinket = frame.Trinket
     local trinketBorder = frame.TexturePool:Acquire()
     trinket.Texture:SetMask("Interface\\masks\\circlemaskscalable")
     trinket.Cooldown:SetSwipeTexture("Interface\\masks\\circlemaskscalable")
@@ -136,7 +136,7 @@ function layout:Initialize(frame)
     trinketBorder:Show()
 
     -- racial
-	local racial = frame.Racial
+    local racial = frame.Racial
     local racialBorder = frame.TexturePool:Acquire()
     racial.Texture:SetMask("Interface\\masks\\circlemaskscalable")
     racial.Cooldown:SetSwipeTexture("Interface\\masks\\circlemaskscalable")
@@ -146,11 +146,11 @@ function layout:Initialize(frame)
     racialBorder:SetAtlas("UI-HUD-UnitFrame-Target-PortraitOn-Boss-IconRing")
     racialBorder:SetPoint("TOPLEFT", racial, "TOPLEFT", -4, 4)
     racialBorder:SetPoint("BOTTOMRIGHT", racial, "BOTTOMRIGHT", 4, -4)
-	racialBorder:SetDrawLayer("ARTWORK", 3)
+    racialBorder:SetDrawLayer("ARTWORK", 3)
     racialBorder:Show()
 
     -- spec icon
-	local specBorder = frame.TexturePool:Acquire()
+    local specBorder = frame.TexturePool:Acquire()
     frame.SpecIcon:SetSize(25, 25)
     frame.SpecIcon.Texture:AddMaskTexture(frame.SpecIcon.Mask)
     specBorder:SetParent(frame.SpecIcon)
@@ -160,32 +160,39 @@ function layout:Initialize(frame)
     specBorder:SetPoint("BOTTOMRIGHT", frame.SpecIcon, "BOTTOMRIGHT", 6, -6)
     specBorder:Show()
 
-	-- castbar
-    local CastBarBackground = frame.TexturePool:Acquire()
-    local CastBarBorder = frame.TexturePool:Acquire()
+    -- castBar
+    local castBarBackground = frame.TexturePool:Acquire()
+    local castBarTextbox = frame.TexturePool:Acquire()
+    local castBarBorder = frame.TexturePool:Acquire()
     f = frame.CastBar
     f:SetHeight(8)
     f.Text:ClearAllPoints()
-    f.Text:SetPoint("BOTTOM", frame.CastBar, 0, -12)
+    f.Text:SetPoint("BOTTOM", f, 0, -12)
     f.Text:SetScale(0.9)
     f.Icon:ClearAllPoints()
-    f.Icon:SetPoint("LEFT", frame.CastBar, -18, -5)
+    f.Icon:SetPoint("LEFT", f, -18, -5)
     f.Icon:SetScale(1.1)
     f.BorderShield:ClearAllPoints()
     f.BorderShield:SetPoint("LEFT", f.Icon, -6, 0)
     f.BorderShield:SetScale(1.1)
-    CastBarBackground:SetParent(frame.CastBar)
-    CastBarBackground:SetDrawLayer("BACKGROUND", 3)
-    CastBarBackground:SetAtlas("UI-CastingBar-TextBox")
-    CastBarBackground:SetPoint("TOPLEFT", frame.CastBar, "TOPLEFT", 0, -6)
-    CastBarBackground:SetPoint("BOTTOMRIGHT", frame.CastBar, "BOTTOMRIGHT", 0, -11)
-    CastBarBackground:Show()
-    CastBarBorder:SetParent(frame.CastBar)
-    CastBarBorder:SetDrawLayer("OVERLAY", 3)
-    CastBarBorder:SetAtlas("UI-CastingBar-Frame")
-    CastBarBorder:SetPoint("TOPLEFT", frame.CastBar, "TOPLEFT", -1, 2)
-    CastBarBorder:SetPoint("BOTTOMRIGHT", frame.CastBar, "BOTTOMRIGHT", 1, -2)
-    CastBarBorder:Show()
+    castBarBackground:SetParent(f)
+    castBarBackground:SetDrawLayer("BACKGROUND", 4)
+    castBarBackground:SetAtlas("UI-CastingBar-Background")
+    castBarBackground:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 1)
+    castBarBackground:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, 0)
+    castBarBackground:Show()
+    castBarTextbox:SetParent(f)
+    castBarTextbox:SetDrawLayer("BACKGROUND", 3)
+    castBarTextbox:SetAtlas("UI-CastingBar-TextBox")
+    castBarTextbox:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -6)
+    castBarTextbox:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 0, -11)
+    castBarTextbox:Show()
+    castBarBorder:SetParent(f)
+    castBarBorder:SetDrawLayer("OVERLAY", 3)
+    castBarBorder:SetAtlas("UI-CastingBar-Frame")
+    castBarBorder:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 2)
+    castBarBorder:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -2)
+    castBarBorder:Show()
     local typeInfoTexture = "ui-castingbar-tier4-empower-2x";
     f:SetStatusBarTexture(typeInfoTexture)
     f.typeInfo = {
@@ -220,35 +227,35 @@ end
 function layout:UpdateOrientation(frame)
     local frameTexture = layout["frameTexture" .. frame:GetID()]
     local healthBar = frame.HealthBar
-	local powerBar = frame.PowerBar
+    local powerBar = frame.PowerBar
     local classIcon = frame.ClassIcon
 
     healthBar:ClearAllPoints()
-	powerBar:ClearAllPoints()
+    powerBar:ClearAllPoints()
     classIcon:ClearAllPoints()
 
     if (self.db.mirrored) then
-        frameTexture:SetTexCoord(1, 0, 0, 1)
-		healthBar:SetSize(126, 19)
-		healthBar:SetStatusBarTexture("UI-HUD-UnitFrame-Player-PortraitOn-Bar-Health-Status")
-        healthBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
-        healthBar:SetPoint("TOPRIGHT", -3, -24)
-		powerBar:SetSize(136, 9)
-		powerBar:SetPoint("TOPLEFT", healthBar, "BOTTOMLEFT", -8, -2)
-		powerBar:SetStatusBarTexture("UI-HUD-UnitFrame-Party-PortraitOn-Bar-Mana-Status")
-		powerBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
-		classIcon:SetPoint("TOPLEFT", 6, -2)
+    	frameTexture:SetTexCoord(1, 0, 0, 1)
+	healthBar:SetSize(126, 19)
+	healthBar:SetStatusBarTexture("UI-HUD-UnitFrame-Player-PortraitOn-Bar-Health-Status")
+    	healthBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
+    	healthBar:SetPoint("TOPRIGHT", -3, -24)
+	powerBar:SetSize(136, 9)
+	powerBar:SetPoint("TOPLEFT", healthBar, "BOTTOMLEFT", -8, -2)
+	powerBar:SetStatusBarTexture("UI-HUD-UnitFrame-Party-PortraitOn-Bar-Mana-Status")
+	powerBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
+	classIcon:SetPoint("TOPLEFT", 6, -2)
     else
-		frameTexture:SetTexCoord(0, 1, 0, 1)
-		healthBar:SetSize(128, 19)
-		healthBar:SetStatusBarTexture("UI-HUD-UnitFrame-Target-PortraitOn-Bar-Health-Status")
-		healthBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
-        healthBar:SetPoint("TOPLEFT", 3, -24)
-		powerBar:SetSize(136, 9)
-		powerBar:SetPoint("TOPLEFT", healthBar, "BOTTOMLEFT", 0, -2)
-		powerBar:SetStatusBarTexture("UI-HUD-UnitFrame-Target-PortraitOn-Bar-Mana-Status")
-		powerBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
-        classIcon:SetPoint("TOPRIGHT", -6, -2)
+    	frameTexture:SetTexCoord(0, 1, 0, 1)
+    	healthBar:SetSize(128, 19)
+    	healthBar:SetStatusBarTexture("UI-HUD-UnitFrame-Target-PortraitOn-Bar-Health-Status")
+    	healthBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
+    	healthBar:SetPoint("TOPLEFT", 3, -24)
+    	powerBar:SetSize(136, 9)
+    	powerBar:SetPoint("TOPLEFT", healthBar, "BOTTOMLEFT", 0, -2)
+    	powerBar:SetStatusBarTexture("UI-HUD-UnitFrame-Target-PortraitOn-Bar-Mana-Status")
+   	powerBar:GetStatusBarTexture():SetDrawLayer("OVERLAY", 3)
+    	classIcon:SetPoint("TOPRIGHT", -6, -2)
     end
 end
 
