@@ -1,6 +1,6 @@
 local layoutName = "Blizz Modern"
 local layout = {}
-layout.name = "|cff00b4ffBlizz|r Modern by |cffFF7C0AMalithorn|r"
+layout.name = "|cff00b4ffBlizz|r Modern"
 
 layout.defaultSettings = {
     posX = 400,
