@@ -15,14 +15,14 @@ layout.defaultSettings = {
         scale = 0.6,
     },
     trinket = {
-        posX = 80,
+        posX = 100,
         posY = 23,
         scale = 0.9,
         fontSize = 12,
     },
     racial = {
-        posX = 89,
-        posY = -19,
+        posX = 100,
+        posY = -20,
         scale = 0.9,
         fontSize = 12,
     },
