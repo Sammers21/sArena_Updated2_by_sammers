@@ -29,3 +29,4 @@ Updated version of sArena Updated (Retail and TBC) edited by sammers. Changes:
 - Credits to `@BlinkyTV_` on twitch for helping with testing and finding ppl for wargames
 - Credits to `@Bicmex` on twitch for the `IsHealer` function that he wrote.
 - Credits to `@devai42coding` on Github for helping with tww migration and absor texture being shown
+- Credits to `@Ma1ithorne` on Github for adding the Blizzard modern layout
