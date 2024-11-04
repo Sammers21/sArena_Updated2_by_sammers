@@ -55,6 +55,6 @@ jobs:
           file_path: "sArena_Updated2_by_sammers-${{ steps.version.outputs.version }}.zip"
           game_endpoint: "wow"
           changelog: "${{ github.event.head_commit.message }}"
-          game_versions: "11.0.2"
+          game_versions: "11.0.5"
           project_id: 937129
           token: "${{ secrets.CF_API_TOKEN }}"

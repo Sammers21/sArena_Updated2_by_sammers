@@ -1,11 +1,11 @@
-## Interface: 110002
+## Interface: 110005
 ## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced arena frames
 ## Author: Sammers
-## Version: 3.2.3
+## Version: 4.0.1
 ## OptionalDeps: ElvUI
 ## X-Category: PvP/Arena
-## X-Credits: Stako, Tekkub, Starship, Kouri, Kollektiv, Lyn, haste, evl, Zork, jturel, wardz, yaggertv
+## X-Credits: Stako, Tekkub, Starship, Kouri, Kollektiv, Lyn, haste, evl, Zork, jturel, wardz, yaggertv, Bicmex, devai42coding, Ma1ithorne
 ## IconTexture: Interface\ICONS\Achievement_arena_2v2_7
 ## SavedVariables: sArena3DB
 
