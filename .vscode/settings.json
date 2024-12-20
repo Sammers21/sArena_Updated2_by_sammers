@@ -31,7 +31,16 @@
         "ChatFontNormal",
         "OKAY",
         "NOT_BOUND",
-        "ReloadUI"
+        "ReloadUI",
+        "UIParent",
+        "GameTooltip",
+        "WOW_PROJECT_ID",
+        "WOW_PROJECT_MAINLINE",
+        "tInvert",
+        "AuraUtil",
+        "RAID_CLASS_COLORS",
+        "PowerBarColor",
+        "GetUnitName"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {
