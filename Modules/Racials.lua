@@ -25,7 +25,7 @@ sArenaMixin.defaultSettings.profile.racialCategories = {
     ["Mechagnome"] = true,
     ["Vulpera"] = true,
     ["Dracthyr"] = true,
-    ["Earthen"] = true
+    ["EarthenDwarf"] = true
 }
 
 local racialSpells = {
@@ -82,7 +82,7 @@ local racialData = {
     ["Mechagnome"] = { texture = C_Spell.GetSpellTexture(312924), sharedCD = 0 },
     ["Vulpera"] = { texture = C_Spell.GetSpellTexture(312411), sharedCD = 0 },
     ["Dracthyr"] = { texture = C_Spell.GetSpellTexture(368970), sharedCD = 0 },
-    ["Earthen"] = { texture = C_Spell.GetSpellTexture(436344), sharedCD = 0 } -- Update sharedCD if needed
+    ["EarthenDwarf"] = { texture = C_Spell.GetSpellTexture(436344), sharedCD = 0 } -- Update sharedCD if needed
 }
 
 local function GetRemainingCD(frame)

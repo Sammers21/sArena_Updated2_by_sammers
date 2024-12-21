@@ -65,7 +65,7 @@ local racialCategories = {
     ["Mechagnome"] = "Mechagnome",
     ["Vulpera"] = "Vulpera",
     ["Dracthyr"] = "Dracthyr",
-    ["Earthen"] = "Earthen"
+    ["EarthenDwarf"] = "EarthenDwarf"
 }
 
 function sArenaMixin:GetLayoutOptionsTable(layoutName)
