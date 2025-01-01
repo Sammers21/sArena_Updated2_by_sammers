@@ -521,7 +521,7 @@ function sArenaFrameMixin:UpdatePlayer(unitEvent)
 
     C_PvP.RequestCrowdControlSpell(unit)
 
-    self:ResetRacial()
+    self:UpdateRacial()
 
     -- prevent castbar and other frames from intercepting mouse clicks during a match
     if (unitEvent == "seen") then

@@ -125,6 +125,8 @@ function sArenaFrameMixin:FindRacial(event, spellID)
 end
 
 function sArenaFrameMixin:UpdateRacial()
+    self.race = nil
+    self.Racial.Texture:SetTexture(nil)
     if ( not self.race ) then
         self.race = select(2, UnitRace(self.unit))
 
