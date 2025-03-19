@@ -25,7 +25,7 @@ sArenaMixin.defaultSettings.profile.racialCategories = {
     ["Mechagnome"] = true,
     ["Vulpera"] = true,
     ["Dracthyr"] = true,
-    ["Earthen"] = true
+    ["EarthenDwarf"] = true
 }
 
 local racialSpells = {
@@ -34,7 +34,7 @@ local racialSpells = {
     [20594] = 120, -- Stoneform
     [58984] = 120,  -- Shadowmeld
     [20589] = 60,   -- Escape Artist
-    [59542] = 180,  -- Gift of the Naaru
+    [59542] = 120,  -- Gift of the Naaru
     [68992] = 120,  -- Darkflight
     [107079] = 120, -- Quaking Palm
     [33697] = 120,  -- Blood Fury
@@ -82,7 +82,7 @@ local racialData = {
     ["Mechagnome"] = { texture = C_Spell.GetSpellTexture(312924), sharedCD = 0 },
     ["Vulpera"] = { texture = C_Spell.GetSpellTexture(312411), sharedCD = 0 },
     ["Dracthyr"] = { texture = C_Spell.GetSpellTexture(368970), sharedCD = 0 },
-    ["Earthen"] = { texture = C_Spell.GetSpellTexture(436344), sharedCD = 0 } -- Update sharedCD if needed
+    ["EarthenDwarf"] = { texture = C_Spell.GetSpellTexture(436344), sharedCD = 0 } -- Update sharedCD if needed
 }
 
 local function GetRemainingCD(frame)
@@ -125,6 +125,8 @@ function sArenaFrameMixin:FindRacial(event, spellID)
 end
 
 function sArenaFrameMixin:UpdateRacial()
+    self.race = nil
+    self.Racial.Texture:SetTexture(nil)
     if ( not self.race ) then
         self.race = select(2, UnitRace(self.unit))
 
