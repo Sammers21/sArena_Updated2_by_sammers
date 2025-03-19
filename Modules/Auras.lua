@@ -213,6 +213,7 @@ sArenaMixin.auraList = tInvert({
     378464, -- Evoker: Nullifying Shroud
 	31821, -- Aura Mastery
 	206803, -- Rain from Above
+    473909, -- Ancient of Lore
 	
 
     -- Silences
