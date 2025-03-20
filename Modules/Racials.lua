@@ -111,7 +111,7 @@ function sArenaFrameMixin:FindRacial(event, spellID)
             local sharedCD = racialData[self.race].sharedCD
 
             -- Check if the unit is a healer and if the race is Human and trinket is Medallion
-            if ( self.race == "Human" and self:IsHealer(unit) and self.Trinket.spellID == 336126 ) then
+            if ( self.race == "Human" and self:IsHealer(self.unit) and self.Trinket.spellID == 336126 ) then
                 sharedCD = 60  -- Set sharedCD to 60
             end
 
@@ -125,7 +125,7 @@ function sArenaFrameMixin:FindRacial(event, spellID)
         local sharedCD = racialData[self.race].sharedCD
 
         -- Check if the unit is a healer and if the race is Human and trinket is Medallion
-        if ( self.race == "Human" and self:IsHealer(unit) and self.Trinket.spellID == 336126 ) then
+        if ( self.race == "Human" and self:IsHealer(self.unit) and self.Trinket.spellID == 336126 ) then
             sharedCD = 60  -- Set sharedCD to 60 if the unit is a healer
         end
 
