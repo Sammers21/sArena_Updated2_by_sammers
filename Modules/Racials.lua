@@ -110,7 +110,13 @@ function sArenaFrameMixin:FindRacial(event, spellID)
             local remainingCD = GetRemainingCD(self.Trinket.Cooldown)
             local sharedCD = racialData[self.race].sharedCD
 
-            if ( sharedCD and remainingCD < sharedCD ) then
+            -- Check if the unit is a healer and if the race is Human and trinket is Medallion
+            if ( self.race == "Human" and IsHealer(self.unit) and self.Trinket.spellID == 336126 ) then
+                sharedCD = 60  -- Set sharedCD to 60
+            end
+
+            -- Apply the shared cooldown if remaining time is less than the sharedCD
+            if (sharedCD and remainingCD < sharedCD) then
                 self.Trinket.Cooldown:SetCooldown(currTime, sharedCD)
             end
         end
@@ -118,7 +124,13 @@ function sArenaFrameMixin:FindRacial(event, spellID)
         local remainingCD = GetRemainingCD(self.Racial.Cooldown)
         local sharedCD = racialData[self.race].sharedCD
 
-        if ( sharedCD and remainingCD < sharedCD ) then
+        -- Check if the unit is a healer and if the race is Human and trinket is Medallion
+        if ( self.race == "Human" and IsHealer(self.unit) and self.Trinket.spellID == 336126 ) then
+            sharedCD = 60  -- Set sharedCD to 60 if the unit is a healer
+        end
+
+        -- Apply the shared cooldown if remaining time is less than the sharedCD
+        if (sharedCD and remainingCD < sharedCD) then
             self.Racial.Cooldown:SetCooldown(GetTime(), sharedCD)
         end
     end
