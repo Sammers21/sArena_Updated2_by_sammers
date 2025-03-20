@@ -785,7 +785,7 @@ function sArenaFrameMixin:UpdateClassIcon()
     self.ClassIcon:SetTexture(texture)
 end
 
-local function IsHealer(unit)
+function IsHealer(unit)
 	local id = string.match(unit, "arena(%d)")
 	local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(id)
 	if(specID) then
