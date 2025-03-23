@@ -785,7 +785,7 @@ function sArenaFrameMixin:UpdateClassIcon()
     self.ClassIcon:SetTexture(texture)
 end
 
-local function IsHealer(unit)
+function sArenaFrameMixin:IsHealer(unit)
 	local id = string.match(unit, "arena(%d)")
 	local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(id)
 	if(specID) then
@@ -811,7 +811,7 @@ function sArenaFrameMixin:UpdateTrinketSammers(unit, spellId)
     -- Normal Trinket
     if (spellId == 336126) then
         trinket.Cooldown:SetCooldown(GetTime(), 120)
-        if (IsHealer(unit)) then
+        if (self:IsHealer(unit)) then
             trinket.Cooldown:SetCooldown(GetTime(), 90)
         end
         -- Dwarf Racial 20594(normal) and 265221(iron dwarf)
