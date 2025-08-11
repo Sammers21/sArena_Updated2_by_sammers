@@ -1,4 +1,4 @@
-## Interface: 110100
+## Interface: 110200
 ## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced arena frames
 ## Author: Sammers
