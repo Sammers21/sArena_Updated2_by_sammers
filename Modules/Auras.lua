@@ -146,7 +146,8 @@ sArenaMixin.auraList = tInvert({
     6789,   -- Mortal Coil (Incapacitate)
 
     -- Immunities
-	378441, -- Time Stop
+    456499, -- Absolute Serenity
+    378441, -- Time Stop
 	354610, -- Demon Hunter: Glimpse
     642,    -- Divine Shield
     186265, -- Aspect of the Turtle
