@@ -572,46 +572,59 @@ end
 
 
 function sArenaFrameMixin:UpdateAbsorb(unit)
-    local maxHealth = UnitHealthMax(unit)
-    local currentHealth = UnitHealth(unit)
-    local absorbAmount = UnitGetTotalAbsorbs(unit)
-    local myCurrentHealAbsorb = UnitGetTotalHealAbsorbs(unit) or 0
-    local allIncomingHeal = UnitGetIncomingHeals(unit) or 0
-
-    -- We don't fill outside the health bar with absorbs. Instead, an overAbsorbGlow is shown.
-    local overAbsorb = false
-    if (currentHealth - myCurrentHealAbsorb + allIncomingHeal + absorbAmount >= maxHealth or currentHealth + absorbAmount >= maxHealth) then
-        if (absorbAmount > 0) then
-            overAbsorb = true
-        end
-        if (allIncomingHeal > myCurrentHealAbsorb) then
-            absorbAmount = math.max(0, maxHealth - (currentHealth - myCurrentHealAbsorb + allIncomingHeal))
+    local healthBar = self.healthbar or self.HealthBar
+    if not healthBar or healthBar:IsForbidden() then return end
+    local absorbBar = self.totalAbsorbBar
+    local absorbOverlay = absorbBar and absorbBar.TiledFillOverlay or self.totalAbsorbBarOverlay
+    local glow = self.overAbsorbGlow
+    if not absorbBar or not absorbOverlay or absorbBar:IsForbidden() or absorbOverlay:IsForbidden() then return end
+    local _, maxHealth = healthBar:GetMinMaxValues()
+    local currentHealth = healthBar:GetValue()
+    if maxHealth <= 0 then return end
+    local totalAbsorb = UnitGetTotalAbsorbs(unit or self.unit) or 0
+    if totalAbsorb > maxHealth then totalAbsorb = maxHealth end
+    local isOverAbsorb = currentHealth + totalAbsorb > maxHealth
+    local healthWidth = healthBar:GetWidth()
+    local healthHeight = healthBar:GetHeight()
+    local absorbWidth = totalAbsorb / maxHealth * healthWidth
+    local missingHealthWidth = (maxHealth - currentHealth) / maxHealth * healthWidth
+    local absorbBarWidth = math.min(absorbWidth, missingHealthWidth)
+    if absorbBarWidth > 0 then
+        absorbBar:ClearAllPoints()
+        absorbBar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", currentHealth / maxHealth * healthWidth, 0)
+        absorbBar:SetWidth(absorbBarWidth)
+        absorbBar:SetHeight(healthHeight)
+        absorbBar:Show()
+    else
+        absorbBar:Hide()
+    end
+    if absorbWidth > 0 then
+        absorbOverlay:SetParent(healthBar)
+        absorbOverlay:ClearAllPoints()
+        if isOverAbsorb then
+            absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+            absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
         else
-            absorbAmount = math.max(0, maxHealth - currentHealth)
+            absorbOverlay:SetPoint("TOPRIGHT", absorbBar, "TOPRIGHT", 0, 0)
+            absorbOverlay:SetPoint("BOTTOMRIGHT", absorbBar, "BOTTOMRIGHT", 0, 0)
         end
-    end
-
-    if (overAbsorb) then
-        self.overAbsorbGlow:Show()
+        absorbOverlay:SetWidth(absorbWidth)
+        absorbOverlay:SetHeight(healthHeight)
+        if absorbOverlay.tileSize then
+            absorbOverlay:SetTexCoord(1 - (absorbWidth / absorbOverlay.tileSize), 1, 0, healthHeight / absorbOverlay.tileSize)
+        end
+        absorbOverlay:Show()
     else
-        self.overAbsorbGlow:Hide()
+        absorbOverlay:Hide()
     end
-
-    if absorbAmount > 0 then
-        local absorbWidth = self.HealthBar:GetWidth() * (absorbAmount / maxHealth)
-        self.totalAbsorbBar:ClearAllPoints()
-        self.totalAbsorbBar:SetWidth(absorbWidth)
-        self.totalAbsorbBar:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT", self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
-        self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
-        self.totalAbsorbBar:Show()
-        self.totalAbsorbBarOverlay:ClearAllPoints()
-        self.totalAbsorbBarOverlay:SetWidth(absorbWidth)
-        self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT", self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
-        self.totalAbsorbBarOverlay:SetHeight(self.HealthBar:GetHeight())
-        self.totalAbsorbBarOverlay:Show()
+    glow:ClearAllPoints()
+    if isOverAbsorb then
+        glow:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", -5, 0)
+        glow:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", -5, 0)
+        glow:SetAlpha(0.6)
+        glow:Show()
     else
-        self.totalAbsorbBar:Hide()
-        self.totalAbsorbBarOverlay:Hide()
+        glow:Hide()
     end
 end
 
@@ -1108,6 +1121,34 @@ function sArenaMixin:Test()
         frame.hideStatusText = false
         frame:SetStatusText("player")
         frame:UpdateStatusTextVisible()
+        local absorbBar = frame.totalAbsorbBar
+        local absorbOverlay = frame.totalAbsorbBarOverlay
+        if absorbBar and absorbOverlay then
+            local healthBar = frame.HealthBar
+            local healthWidth = healthBar:GetWidth()
+            local healthHeight = healthBar:GetHeight()
+            local absorbAmount = 25
+            local absorbWidth = healthWidth * (absorbAmount / 100)
+            absorbBar:Hide()
+            absorbOverlay:SetParent(healthBar)
+            absorbOverlay:ClearAllPoints()
+            absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+            absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+            absorbOverlay:SetWidth(absorbWidth)
+            absorbOverlay:SetHeight(healthHeight)
+            if absorbOverlay.tileSize then
+                absorbOverlay:SetTexCoord(1 - (absorbWidth / absorbOverlay.tileSize), 1, 0, healthHeight / absorbOverlay.tileSize)
+            end
+            absorbOverlay:Show()
+            local glow = frame.overAbsorbGlow
+            if glow then
+                glow:ClearAllPoints()
+                glow:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", -5, 0)
+                glow:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", -5, 0)
+                glow:SetAlpha(0.6)
+                glow:Show()
+            end
+        end
     end
 end
 
