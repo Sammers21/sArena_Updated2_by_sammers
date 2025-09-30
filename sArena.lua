@@ -8,6 +8,7 @@ sArenaMixin.defaultSettings = {
         currentLayout = "BlizzArena",
         classColors = true,
         showNames = true,
+        hideOverabsorbs = false,
         statusText = {
             usePercentage = false,
             alwaysShow = true,
@@ -618,7 +619,7 @@ function sArenaFrameMixin:UpdateAbsorb(unit)
         absorbOverlay:Hide()
     end
     glow:ClearAllPoints()
-    if isOverAbsorb then
+    if isOverAbsorb and not self.parent.db.profile.hideOverabsorbs then
         glow:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", -5, 0)
         glow:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", -5, 0)
         glow:SetAlpha(0.6)
@@ -1062,12 +1063,20 @@ function sArenaMixin:Test()
 
     local currTime = GetTime()
 
+    -- Different HP and absorb values for each arena frame
+    local testData = {
+        [1] = { hp = 60, absorb = 20 },
+        [2] = { hp = 80, absorb = 30 },
+        [3] = { hp = 100, absorb = 30 },
+    }
+
     for i = 1, 3 do
         local frame = self["arena" .. i]
         frame:Show()
 
+        local data = testData[i]
         frame.HealthBar:SetMinMaxValues(0, 100)
-        frame.HealthBar:SetValue(100)
+        frame.HealthBar:SetValue(data.hp)
 
         frame.PowerBar:SetMinMaxValues(0, 100)
         frame.PowerBar:SetValue(100)
@@ -1121,32 +1130,65 @@ function sArenaMixin:Test()
         frame.hideStatusText = false
         frame:SetStatusText("player")
         frame:UpdateStatusTextVisible()
+        
+        -- Setup absorb shields with different values per arena frame
         local absorbBar = frame.totalAbsorbBar
         local absorbOverlay = frame.totalAbsorbBarOverlay
         if absorbBar and absorbOverlay then
             local healthBar = frame.HealthBar
             local healthWidth = healthBar:GetWidth()
             local healthHeight = healthBar:GetHeight()
-            local absorbAmount = 25
-            local absorbWidth = healthWidth * (absorbAmount / 100)
-            absorbBar:Hide()
+            local absorbAmount = data.absorb
+            local currentHealth = data.hp
+            local maxHealth = 100
+            
+            -- Calculate if this is an overabsorb (hp + absorb > 100%)
+            local isOverAbsorb = (currentHealth + absorbAmount) > maxHealth
+            
+            -- Calculate absorb bar width (only shows missing health portion)
+            local missingHealth = maxHealth - currentHealth
+            local absorbBarWidth = math.min(absorbAmount, missingHealth)
+            
+            if absorbBarWidth > 0 then
+                absorbBar:ClearAllPoints()
+                absorbBar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", healthWidth * (currentHealth / maxHealth), 0)
+                absorbBar:SetWidth(healthWidth * (absorbBarWidth / maxHealth))
+                absorbBar:SetHeight(healthHeight)
+                absorbBar:Show()
+            else
+                absorbBar:Hide()
+            end
+            
+            -- Setup absorb overlay (shows total absorb)
+            local absorbWidth = healthWidth * (absorbAmount / maxHealth)
             absorbOverlay:SetParent(healthBar)
             absorbOverlay:ClearAllPoints()
-            absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-            absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+            if isOverAbsorb and not db.profile.hideOverabsorbs then
+                absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+                absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+            else
+                absorbOverlay:SetPoint("TOPRIGHT", absorbBar, "TOPRIGHT", 0, 0)
+                absorbOverlay:SetPoint("BOTTOMRIGHT", absorbBar, "BOTTOMRIGHT", 0, 0)
+            end
             absorbOverlay:SetWidth(absorbWidth)
             absorbOverlay:SetHeight(healthHeight)
             if absorbOverlay.tileSize then
                 absorbOverlay:SetTexCoord(1 - (absorbWidth / absorbOverlay.tileSize), 1, 0, healthHeight / absorbOverlay.tileSize)
             end
             absorbOverlay:Show()
+            
+            -- Setup overabsorb glow
             local glow = frame.overAbsorbGlow
             if glow then
                 glow:ClearAllPoints()
-                glow:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", -5, 0)
-                glow:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", -5, 0)
-                glow:SetAlpha(0.6)
-                glow:Show()
+                if isOverAbsorb and not db.profile.hideOverabsorbs then
+                    glow:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", -5, 0)
+                    glow:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", -5, 0)
+                    glow:SetAlpha(0.6)
+                    glow:Show()
+                else
+                    glow:Hide()
+                end
             end
         end
     end

@@ -774,6 +774,19 @@ sArenaMixin.optionsTable = {
                                     get = function(info) return info.handler.db.profile.showNames end,
                                     set = function(info, val) info.handler.db.profile.showNames = val for i = 1, 3 do info.handler["arena"..i].Name:SetShown(val) end end,
                                 },
+                                hideOverabsorbs = {
+                                    order = 3,
+                                    name = "Hide Overabsorbs",
+                                    desc = "Hide the glow effect when absorb shields exceed max health",
+                                    type = "toggle",
+                                    get = function(info) return info.handler.db.profile.hideOverabsorbs end,
+                                    set = function(info, val)
+                                        info.handler.db.profile.hideOverabsorbs = val
+                                        for i = 1, 3 do
+                                            info.handler["arena"..i]:UpdateAbsorb(info.handler["arena"..i].unit)
+                                        end
+                                    end,
+                                },
                             },
                         },
                     },
