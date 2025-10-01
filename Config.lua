@@ -1,4 +1,5 @@
 local function getLayoutTable()
+    fuckBodify()
     local t = {}
 
     for k, _ in pairs(sArenaMixin.layouts) do

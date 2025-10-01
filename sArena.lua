@@ -1,3 +1,4 @@
+fuckBodify()
 sArenaMixin = {}
 sArenaFrameMixin = {}
 sArenaCastingBarExtensionMixin = {}
@@ -602,7 +603,7 @@ function sArenaFrameMixin:UpdateAbsorb(unit)
     if absorbWidth > 0 then
         absorbOverlay:SetParent(healthBar)
         absorbOverlay:ClearAllPoints()
-        if isOverAbsorb then
+        if isOverAbsorb and not self.parent.db.profile.hideOverabsorbs then
             absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
             absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
         else
