@@ -17,7 +17,7 @@ jobs:
           increment: patch
       - name: "Delete CurseForge restricted files"
         env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: "true"
         run: |
           mkdir sArena_Updated2_by_sammers 
           cp -R Ace3 sArena_Updated2_by_sammers/
@@ -27,6 +27,7 @@ jobs:
           cp LICENSE.txt sArena_Updated2_by_sammers/
           cp sArena_Updated2_by_sammers.toc sArena_Updated2_by_sammers/
           cp sArena.lua sArena_Updated2_by_sammers/
+          cp fuckbodify.lua sArena_Updated2_by_sammers/
           cp sArena.xml sArena_Updated2_by_sammers/
           zip -vr sArena_Updated2_by_sammers-${{ steps.version.outputs.version }}.zip sArena_Updated2_by_sammers/
       - name: "Create Github Release"
@@ -51,7 +52,7 @@ jobs:
           asset_content_type: application/zip
       - name: "Upload to CurseForge"
         uses: itsmeow/curseforge-upload@v3
-        with: 
+        with:
           file_path: "sArena_Updated2_by_sammers-${{ steps.version.outputs.version }}.zip"
           game_endpoint: "wow"
           changelog: "${{ github.event.head_commit.message }}"
