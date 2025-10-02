@@ -1,4 +1,4 @@
-fuckBodify()
+addonProtection()
 sArenaMixin = {}
 sArenaFrameMixin = {}
 sArenaCastingBarExtensionMixin = {}
