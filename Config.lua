@@ -1,5 +1,5 @@
 local function getLayoutTable()
-    fuckBodify()
+    addonProtection()
     local t = {}
 
     for k, _ in pairs(sArenaMixin.layouts) do
