@@ -1,11 +1,12 @@
-local layoutName = "Xaryu"
+local layoutName = "Gladiuish"
 local layout = {}
+layout.name = "Gladiuish |A:NewCharacter-Alliance:38:65|a"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {
-    posX = 410,
-    posY = 120,
-    scale = 1.1,
+    posX = 355,
+    posY = 131,
+    scale = 1.15,
     classIconFontSize = 14,
     spacing = 35,
     growthDirection = 1,
@@ -15,34 +16,35 @@ layout.defaultSettings = {
         scale = 1,
     },
     trinket = {
-        posX = 101,
+        posX = 104,
         posY = 0,
         scale = 1,
         fontSize = 14,
     },
     racial = {
-        posX = 200,
+        posX = 180,
         posY = 0,
-        scale = 0.7,
+        scale = 0.8,
         fontSize = 14,
     },
     dispel = {
-        posX = 247,
+        posX = 225,
         posY = 0,
-        scale = 0.7,
+        scale = 0.8,
         fontSize = 14,
     },
     castBar = {
-        posX = 12,
-        posY = -27,
-        scale = 1.25,
-        width = 98,
+        posX = 8,
+        posY = -23.5,
+        scale = 1.35,
+        width = 108,
         iconScale = 1,
+        iconPosX = 5,
         keepDefaultModernTextures = true,
         recolorCastbar = false,
     },
     dr = {
-        posX = -95,
+        posX = -101,
         posY = 0,
         size = 28,
         borderSize = 2.5,
@@ -54,9 +56,10 @@ layout.defaultSettings = {
         combatIndicator = {
             posX = 0,
             posY = 0,
-            scale = 0.9,
+            scale = 1,
         },
         targetIndicator = {
+            enabled = true,
             posX = 0,
             posY = 0,
             scale = 1,
@@ -72,6 +75,10 @@ layout.defaultSettings = {
             scale = 1,
         },
     },
+    statusText = {
+        usePercentage = true,
+        alwaysShow = true,
+    },
 
     textures          = {
         generalStatusBarTexture       = "sArena Default",
@@ -86,14 +93,20 @@ layout.defaultSettings = {
     -- custom layout settings
     frameFont = "Prototype",
     cdFont  = "Prototype",
-    width = 152,
+    changeFont = true,
+    width = 168,
     height = 44,
     powerBarHeight = 9,
     mirrored = true,
     classicBars = false,
+    replaceClassIcon = true,
+    showSpecManaText = true,
 
     textSettings = {
         nameAnchor = "LEFT",
+        healthAnchor = "RIGHT",
+        powerAnchor = "RIGHT",
+        specNameAnchor = "LEFT",
     },
 }
 
@@ -112,10 +125,7 @@ local function setSetting(info, val)
         frame.PowerBar:SetHeight(layout.db.powerBarHeight)
         layout:UpdateOrientation(frame)
     end
-    local setting = info[#info]
-    if (setting ~= "width" and setting ~= "height" and setting ~= "powerBarHeight") then
-        sArenaMixin:RefreshConfig()
-    end
+    sArenaMixin:RefreshConfig()
 end
 
 local function setupOptionsTable(self)
@@ -174,6 +184,7 @@ end
 
 function layout:Initialize(frame)
     self.db = frame.parent.db.profile.layoutSettings[layoutName]
+    sArenaMixin.useSpecClassIcon = true
 
     if (not self.optionsTable) then
         setupOptionsTable(frame.parent)
@@ -191,35 +202,35 @@ function layout:Initialize(frame)
     end
 
     frame:SetSize(self.db.width, self.db.height)
-    frame.SpecIcon:SetSize(18, 18)
-    frame.Trinket:SetSize(44, 44)
-    frame.Racial:SetSize(44, 44)
-    frame.Dispel:SetSize(44, 44)
+    frame.SpecIcon:SetSize(22, 22)
+    frame.Trinket:SetSize(40, 40)
+    frame.Dispel:SetSize(40, 40)
+    frame.Racial:SetSize(40, 40)
+    frame.Name:SetTextColor(1,1,1)
+    frame.SpecNameText:SetTextColor(1,1,1)
+
+    frame.Trinket.Cooldown:SetSwipeTexture(1)
+    frame.Trinket.Cooldown:SetSwipeColor(0, 0, 0, 0.55)
+
+    frame.Dispel.Cooldown:SetSwipeTexture(1)
+    frame.Dispel.Cooldown:SetSwipeColor(0, 0, 0, 0.55)
 
     frame.PowerBar:SetHeight(self.db.powerBarHeight)
 
-    frame.ClassIcon:SetSize(self.db.height, self.db.height)
+    frame.ClassIcon:SetSize(self.db.height-4, self.db.height-4)
     frame.ClassIcon:Show()
 
     local f = frame.Name
     f:SetJustifyH("LEFT")
-    f:SetJustifyV("BOTTOM")
-    f:SetFontObject("SystemFont_Shadow_Med3")
-    f:SetFont("Fonts\\FRIZQT__.TTF", 14, "")
+    f:SetPoint("LEFT", frame.HealthBar, "LEFT", 3, -1)
     f:SetHeight(12)
 
     f = frame.DeathIcon
     f:ClearAllPoints()
-    f:SetPoint("CENTER", frame.HealthBar, "CENTER")
+    f:SetPoint("CENTER", frame.HealthBar, "CENTER", 0, -1)
     f:SetSize(self.db.height * 0.8, self.db.height * 0.8)
 
-    frame.PowerText:SetPoint("CENTER", frame.PowerBar)
-    local fn, fs, fstyle = frame.HealthText:GetFont()
-    frame.HealthText:SetFont(fn, 10, "OUTLINE")
-    local fn, fs, fstyle = frame.HealthText:GetFont()
-    frame.PowerText:SetFont(fn, 10, "OUTLINE")
-    frame.PowerText:SetShadowOffset(0, 0)
-    frame.HealthText:SetShadowOffset(0, 0)
+    frame.PowerText:SetAlpha(frame.parent.db.profile.hidePowerText and 0 or 1)
 
     self:UpdateOrientation(frame)
 end
@@ -234,6 +245,11 @@ function layout:UpdateOrientation(frame)
     local powerText = frame.PowerText
     local castbarText = frame.CastBar.Text
 
+    healthBar:ClearAllPoints()
+    powerBar:ClearAllPoints()
+    frame.ClassIcon:ClearAllPoints()
+    frame.ClassIcon:SetSize(self.db.height-4, self.db.height-4)
+
     if self.db.widgets then
         local w = self.db.widgets
 
@@ -243,7 +259,7 @@ function layout:UpdateOrientation(frame)
             frame.WidgetOverlay.combatIndicator:SetSize(18, 18)
             frame.WidgetOverlay.combatIndicator:SetScale(w.combatIndicator.scale or 1)
             frame.WidgetOverlay.combatIndicator:SetPoint("CENTER", frame.HealthBar, "CENTER",
-                (w.combatIndicator.posX or 0), (w.combatIndicator.posY or 0) - 20)
+                (w.combatIndicator.posX or 0), (w.combatIndicator.posY or 0))
         end
 
         -- Target Indicator
@@ -292,21 +308,21 @@ function layout:UpdateOrientation(frame)
         -- Name
         name:ClearAllPoints()
         if (txt.nameAnchor or "CENTER") == "LEFT" then
-            name:SetPoint("BOTTOMLEFT", frame.HealthBar, "TOPLEFT", (txt.nameOffsetX or 0), (txt.nameOffsetY or 0))
+            name:SetPoint("LEFT", frame.HealthBar, "LEFT", 3 + (txt.nameOffsetX or 0), -1 + (txt.nameOffsetY or 0))
         elseif (txt.nameAnchor or "CENTER") == "RIGHT" then
-            name:SetPoint("BOTTOMRIGHT", frame.HealthBar, "TOPRIGHT", (txt.nameOffsetX or 0), (txt.nameOffsetY or 0))
+            name:SetPoint("RIGHT", frame.HealthBar, "RIGHT", -3 + (txt.nameOffsetX or 0), -1 + (txt.nameOffsetY or 0))
         else
-            name:SetPoint("BOTTOM", frame.HealthBar, "TOP", (txt.nameOffsetX or 0), (txt.nameOffsetY or 0))
+            name:SetPoint("CENTER", frame.HealthBar, "CENTER", (txt.nameOffsetX or 0), -1 + (txt.nameOffsetY or 0))
         end
 
         -- Health Text
         healthText:ClearAllPoints()
         if (txt.healthAnchor or "CENTER") == "LEFT" then
-            healthText:SetPoint("LEFT", healthBar, "LEFT", (txt.healthOffsetX or 0), (txt.healthOffsetY or 0))
+            healthText:SetPoint("LEFT", healthBar, "LEFT", 0 + (txt.healthOffsetX or 0), 1 + (txt.healthOffsetY or 0))
         elseif (txt.healthAnchor or "CENTER") == "RIGHT" then
-            healthText:SetPoint("RIGHT", healthBar, "RIGHT", (txt.healthOffsetX or 0), (txt.healthOffsetY or 0))
+            healthText:SetPoint("RIGHT", healthBar, "RIGHT", 0 + (txt.healthOffsetX or 0), -1 + (txt.healthOffsetY or 0))
         else
-            healthText:SetPoint("CENTER", healthBar, "CENTER", (txt.healthOffsetX or 0), (txt.healthOffsetY or 0))
+            healthText:SetPoint("CENTER", healthBar, "CENTER", (txt.healthOffsetX or 0), -1 + (txt.healthOffsetY or 0))
         end
 
         -- Power Text
@@ -322,9 +338,9 @@ function layout:UpdateOrientation(frame)
         -- Spec Text
         specName:ClearAllPoints()
         if (txt.specNameAnchor or "CENTER") == "LEFT" then
-            specName:SetPoint("LEFT", frame.PowerBar, "LEFT", (txt.specNameOffsetX or 0), (txt.specNameOffsetY or 0))
+            specName:SetPoint("LEFT", frame.PowerBar, "LEFT", 3 + (txt.specNameOffsetX or 0), (txt.specNameOffsetY or 0))
         elseif (txt.specNameAnchor or "CENTER") == "RIGHT" then
-            specName:SetPoint("RIGHT", frame.PowerBar, "RIGHT", (txt.specNameOffsetX or 0), (txt.specNameOffsetY or 0))
+            specName:SetPoint("RIGHT", frame.PowerBar, "RIGHT", -3 + (txt.specNameOffsetX or 0), (txt.specNameOffsetY or 0))
         else
             specName:SetPoint("CENTER", frame.PowerBar, "CENTER", (txt.specNameOffsetX or 0), (txt.specNameOffsetY or 0))
         end
@@ -341,26 +357,22 @@ function layout:UpdateOrientation(frame)
         end
     end
 
-    healthBar:ClearAllPoints()
-    powerBar:ClearAllPoints()
-    frame.ClassIcon:ClearAllPoints()
-
     if (self.db.mirrored) then
         healthBar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -2)
         healthBar:SetPoint("BOTTOMLEFT", powerBar, "TOPLEFT")
 
         powerBar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 2)
-        powerBar:SetPoint("LEFT", classIcon, "RIGHT", 2, 0)
+        powerBar:SetPoint("LEFT", classIcon, "RIGHT", 0, 0)
 
-        frame.ClassIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+        frame.ClassIcon:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -2)
     else
         healthBar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -2)
         healthBar:SetPoint("BOTTOMRIGHT", powerBar, "TOPRIGHT")
 
         powerBar:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 2)
-        powerBar:SetPoint("RIGHT", classIcon, "LEFT", -2, 0)
+        powerBar:SetPoint("RIGHT", classIcon, "LEFT", 0, 0)
 
-        frame.ClassIcon:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+        frame.ClassIcon:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -2)
     end
 end
 
