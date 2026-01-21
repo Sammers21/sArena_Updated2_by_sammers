@@ -15,6 +15,9 @@ jobs:
         with:
           scheme: calver
           increment: patch
+      - name: "Update version in TOC file"
+        run: |
+          sed -i 's/^## Version:.*/## Version: ${{ steps.version.outputs.version }}/' sArena_Updated2_by_sammers.toc
       - name: "Delete CurseForge restricted files"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: "true"
