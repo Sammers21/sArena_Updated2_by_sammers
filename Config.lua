@@ -3,13 +3,6 @@ local isRetail = sArenaMixin.isRetail
 local isMidnight = sArenaMixin.isMidnight
 local L = sArenaMixin.L
 
-local midnightInfo
-if not isMidnight then
-    midnightInfo = L["Midnight_UpdateInfo"]
-else
-    midnightInfo = L["Midnight_BetaInfo"]
-end
-
 local function GetSpellInfoCompat(spellID)
     if not spellID then
         return nil
@@ -4144,7 +4137,7 @@ function sArenaMixin:CompatibilityIssueExists()
         "sArena Updated",
         "sArena_MoP",
         "sArena_Pinaclonada",
-        "sArena_Updated2_by_sammers",
+        "sArena_Reloaded",
     }
 
     -- Check each known version to see if it's loaded
@@ -5487,21 +5480,6 @@ else
                         name = function() return sArenaMixin.conversionStatusText or "" end,
                         fontSize = "medium",
                         hidden = function() return not sArenaMixin.conversionStatusText or sArenaMixin.conversionStatusText == "" end,
-                    },
-                },
-            },
-            midnightExpansion = {
-                order = 8,
-                name = "|cffcc66ffMidnight|r |T136221:16:16|t",
-                desc = L["Option_MidnightPlans_Desc"],
-                type = "group",
-                args = {
-                    description = {
-                        order = 1,
-                        type = "description",
-                        name = midnightInfo,
-                        fontSize = "medium",
-                        width = "full",
                     },
                 },
             },

@@ -62,7 +62,7 @@ local classPowerType = {
 }
 
 function sArenaMixin:Print(fmt, ...)
-    local prefix = "|cffffffffsArena Updated 2 by sammers |T135884:13:13|t:"
+    local prefix = "|cffffffffsArena Updated 2 by sammers :"
     print(prefix, string.format(fmt, ...))
 end
 
@@ -1689,7 +1689,7 @@ function sArenaMixin:Initialize()
         end
         self:UpdateDecimalThreshold()
         self:UpdateNoTrinketTexture()
-        LibStub("AceConfigDialog-3.0"):AddToBlizOptions("sArena", "sArena Updated 2 by sammers |T135884:13:13|t")
+        LibStub("AceConfigDialog-3.0"):AddToBlizOptions("sArena", "sArena Updated 2 by sammers ")
         self:SetLayout(_, db.profile.currentLayout)
     else
         C_Timer.After(5, function()
@@ -3090,15 +3090,15 @@ function sArenaMixin:AddMasqueSupport()
     local Masque = LibStub("Masque", true)
     masqueOn = true
 
-    local sArenaClass = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Class/Aura")
-    local sArenaTrinket = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Trinket")
-    local sArenaSpecIcon = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "SpecIcon")
-    local sArenaRacial = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Racial")
-    local sArenaDispel = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Dispel")
-    local sArenaDRs = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "DRs")
-    local sArenaFrame = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Frame")
-    local sArenaCastbar = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Castbar")
-    local sArenaCastbarIcon = Masque:Group("sArena Updated 2 by sammers |T135884:13:13|t", "Castbar Icon")
+    local sArenaClass = Masque:Group("sArena Updated 2 by sammers ", "Class/Aura")
+    local sArenaTrinket = Masque:Group("sArena Updated 2 by sammers ", "Trinket")
+    local sArenaSpecIcon = Masque:Group("sArena Updated 2 by sammers ", "SpecIcon")
+    local sArenaRacial = Masque:Group("sArena Updated 2 by sammers ", "Racial")
+    local sArenaDispel = Masque:Group("sArena Updated 2 by sammers ", "Dispel")
+    local sArenaDRs = Masque:Group("sArena Updated 2 by sammers ", "DRs")
+    local sArenaFrame = Masque:Group("sArena Updated 2 by sammers ", "Frame")
+    local sArenaCastbar = Masque:Group("sArena Updated 2 by sammers ", "Castbar")
+    local sArenaCastbarIcon = Masque:Group("sArena Updated 2 by sammers ", "Castbar Icon")
 
     function sArenaMixin:RefreshMasque()
         sArenaClass:ReSkin(true)
@@ -4735,7 +4735,7 @@ function sArenaMixin:Test()
         local t2 = f:CreateFontString(nil, "OVERLAY")
         t2:SetFontObject("GameFontHighlightLarge")
         t2:SetFont(self.pFont, 21, "OUTLINE")
-        t2:SetText("sArena Updated 2 by sammers |T135884:13:13|t")
+        t2:SetText("sArena Updated 2 by sammers ")
         t2:SetPoint("BOTTOM", t, "TOP", 3, 5)
 
         TestTitle:SetPoint("TOPLEFT", t, "TOPLEFT", -5, 45)
