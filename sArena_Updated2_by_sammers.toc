@@ -7,6 +7,7 @@
 ## OptionalDeps: sArena_Reloaded
 ## X-Category: PvP/Arena
 ## X-Credits: Tekkub, Starship, Kouri, Kollektiv, Lyn, haste, evl, Zork, jturel, wardz, A3st (delayy), Aeded, Xaryu, Mageiden, Bodify, Stako
+## X-Wago-ID: x6188WN1
 ## SavedVariables: sArena3DB
 
 sArena.xml

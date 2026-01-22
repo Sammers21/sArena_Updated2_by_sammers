@@ -65,3 +65,22 @@ jobs:
           game_versions: "12.0.1"
           project_id: 937129
           token: "${{ secrets.CF_API_TOKEN }}"
+      - name: "Upload to Wago.io"
+        env:
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+        run: |
+          METADATA=$(cat <<EOF
+          {
+            "label": "${{ steps.version.outputs.version }}",
+            "stability": "stable",
+            "changelog": "${{ github.event.head_commit.message }}",
+            "supported_retail_patch": "12.0.1"
+          }
+          EOF
+          )
+          curl -f -X POST \
+            -F "metadata=$METADATA" \
+            -F "file=@sArena_Updated2_by_sammers-${{ steps.version.outputs.version }}.zip" \
+            -H "Authorization: Bearer $WAGO_API_TOKEN" \
+            -H "Accept: application/json" \
+            "https://addons.wago.io/api/projects/x6188WN1/version"
