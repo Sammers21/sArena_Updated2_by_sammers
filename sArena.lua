@@ -14,7 +14,6 @@ sArenaMixin.trinketTexture = (isRetail and 1322720) or 133453
 sArenaMixin.trinketID = (isRetail and 336126) or 42292
 sArenaMixin.showPixelBorder = false
 sArenaMixin.interruptReady = true
-sArenaMixin.pFont = "Interface\\AddOns\\sArena_Updated2_by_sammers\\Textures\\Prototype.ttf"
 C_AddOns.EnableAddOn("sArena_Updated2_by_sammers")
 local LSM = LibStub("LibSharedMedia-3.0")
 local decimalThreshold = 6 -- Default value, will be updated from db
@@ -22,8 +21,11 @@ LSM:Register("statusbar", "Blizzard RetailBar", [[Interface\AddOns\sArena_Update
 LSM:Register("statusbar", "sArena Default", [[Interface\AddOns\sArena_Updated2_by_sammers\Textures\sArenaDefault]])
 LSM:Register("statusbar", "sArena Stripes", [[Interface\AddOns\sArena_Updated2_by_sammers\Textures\sArenaHealer]])
 LSM:Register("statusbar", "sArena Stripes 2", [[Interface\AddOns\sArena_Updated2_by_sammers\Textures\sArenaRetailHealer]])
+-- Prototype font only supports western languages and Russian, so LSM will automatically reject registration on unsupported locales
 LSM:Register("font", "Prototype", "Interface\\Addons\\sArena_Updated2_by_sammers\\Textures\\Prototype.ttf", LSM.LOCALE_BIT_western + LSM.LOCALE_BIT_ruRU)
 LSM:Register("font", "PT Sans Narrow Bold", "Interface\\Addons\\sArena_Updated2_by_sammers\\Textures\\PTSansNarrow-Bold.ttf", LSM.LOCALE_BIT_western + LSM.LOCALE_BIT_ruRU)
+-- Fetch pFont through LSM: use Prototype if registered, otherwise fall back to LSM's default font for the current locale
+sArenaMixin.pFont = LSM:Fetch(LSM.MediaType.FONT, "Prototype") or LSM:Fetch(LSM.MediaType.FONT, LSM:GetDefault(LSM.MediaType.FONT))
 local GetSpellTexture = GetSpellTexture or C_Spell.GetSpellTexture
 local stealthAlpha = 0.4
 local shadowsightStartTime = 95
@@ -1174,6 +1176,7 @@ local function GetFactionTrinketIconByRace(race)
 end
 
 function sArenaMixin:ShowMidnightDRWarning()
+    if sArenaSkipDrWarning then return end
     if self.midnightWarningFrame then
         self.midnightWarningFrame:Show()
         return
@@ -4316,7 +4319,7 @@ function sArenaMixin:Test()
         end
 
         if db.profile.showDispels then
-            local dispelInfo = frame:GetTestModeDispelData()
+            local dispelInfo = frame.GetTestModeDispelData and frame:GetTestModeDispelData()
             if dispelInfo then
                 frame.Dispel.Texture:SetTexture(dispelInfo.texture)
                 frame.Dispel:Show()

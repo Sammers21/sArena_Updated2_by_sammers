@@ -3,25 +3,48 @@ if sArenaMixin.isMidnight then return end
 local GetTime = GetTime
 local isRetail = sArenaMixin.isRetail
 local GetSpellTexture = GetSpellTexture or C_Spell.GetSpellTexture
+local L = sArenaMixin.L
+
+-- Helper function to get localized spell name with fallback
+-- Compatible with both legacy (pre-12.0) and new API (12.0.0+)
+local function GetSpellName(spellID, fallbackName)
+	-- Try new API first (12.0.0+): C_Spell.GetSpellName returns just the name string
+	if C_Spell and C_Spell.GetSpellName then
+		local name = C_Spell.GetSpellName(spellID)
+		if name then return name end
+	end
+	-- Try new API alternative: C_Spell.GetSpellInfo returns a table with .name field
+	if C_Spell and C_Spell.GetSpellInfo then
+		local spellInfo = C_Spell.GetSpellInfo(spellID)
+		if spellInfo and spellInfo.name then return spellInfo.name end
+	end
+	-- Fallback to legacy API (deprecated in 12.0.0 but may still work)
+	if GetSpellInfo then
+		local name = GetSpellInfo(spellID)
+		if name then return name end
+	end
+	-- Last resort: use provided fallback or "Unknown"
+	return fallbackName or "Unknown"
+end
 
 if isRetail then
 	sArenaMixin.dispelData = {
-		[527] = { texture = GetSpellTexture(527), name = "Purify", classes = "Disc/Holy Priest", cooldown = 8, healer = true },
-		[213634] = { texture = GetSpellTexture(213634), name = "Purify Disease", classes = "Shadow Priest", cooldown = 8, showAfterUse = true },
-		[4987] = { texture = GetSpellTexture(4987), name = "Cleanse", classes = "Holy Paladin", cooldown = 8, healer = true },
-		[213644] = { texture = GetSpellTexture(213644), name = "Cleanse Toxins", classes = "Prot/Ret Paladin", cooldown = 8, showAfterUse = true },
-		[77130] = { texture = GetSpellTexture(77130), name = "Purify Spirit", classes = "Resto Shaman", cooldown = 8, healer = true },
-		[51886] = { texture = GetSpellTexture(51886), name = "Cleanse Spirit", classes = "Enh/Ele Shaman", cooldown = 8, showAfterUse = true },
-		[88423] = { texture = GetSpellTexture(88423), name = "Nature's Cure", classes = "Resto Druid", cooldown = 8, healer = true },
-		[2782] = { texture = GetSpellTexture(2782), name = "Remove Corruption", classes = "Balance/Feral/Guardian Druid", cooldown = 8, showAfterUse = true },
-		[475] = { texture = GetSpellTexture(475), name = "Remove Curse", classes = "Mage", cooldown = 8, showAfterUse = true },
-		[218164] = { texture = GetSpellTexture(218164), name = "Detox", classes = "Monk", cooldown = 8, showAfterUse = true },
-		[115450] = { texture = GetSpellTexture(115450), name = "Detox", classes = "Mistweaver Monk", cooldown = 8, healer = true },
-		[360823] = { texture = GetSpellTexture(360823), name = "Naturalize", classes = "Evoker", cooldown = 8, healer = true },
-		[374251] = { texture = GetSpellTexture(374251), name = "Cauterizing Flame", classes = "Dev Evoker", cooldown = 60, showAfterUse = true },
-		[119905] = { texture = GetSpellTexture(119905), name = "Singe Magic", classes = "Warlock Pet", cooldown = 15, showAfterUse = true },
-		[132411] = { texture = GetSpellTexture(132411), name = "Singe Magic", classes = "Warlock (Grimoire)", cooldown = 15, showAfterUse = true },
-		[212640] = { texture = GetSpellTexture(212640), name = "Mending Bandage", classes = "Survival Hunter", cooldown = 25, showAfterUse = true },
+		[527] = { texture = GetSpellTexture(527), name = "Purify", classes = L["DispelClass_DiscHolyPriest"], cooldown = 8, healer = true },
+		[213634] = { texture = GetSpellTexture(213634), name = "Purify Disease", classes = L["DispelClass_ShadowPriest"], cooldown = 8, showAfterUse = true },
+		[4987] = { texture = GetSpellTexture(4987), name = "Cleanse", classes = L["DispelClass_HolyPaladin"], cooldown = 8, healer = true },
+		[213644] = { texture = GetSpellTexture(213644), name = "Cleanse Toxins", classes = L["DispelClass_ProtRetPaladin"], cooldown = 8, showAfterUse = true },
+		[77130] = { texture = GetSpellTexture(77130), name = "Purify Spirit", classes = L["DispelClass_RestoShaman"], cooldown = 8, healer = true },
+		[51886] = { texture = GetSpellTexture(51886), name = "Cleanse Spirit", classes = L["DispelClass_EnhEleShaman"], cooldown = 8, showAfterUse = true },
+		[88423] = { texture = GetSpellTexture(88423), name = "Nature's Cure", classes = L["DispelClass_RestoDruid"], cooldown = 8, healer = true },
+		[2782] = { texture = GetSpellTexture(2782), name = "Remove Corruption", classes = L["DispelClass_BalFeralGuardianDruid"], cooldown = 8, showAfterUse = true },
+		[475] = { texture = GetSpellTexture(475), name = "Remove Curse", classes = L["DispelClass_Mage"], cooldown = 8, showAfterUse = true },
+		[218164] = { texture = GetSpellTexture(218164), name = "Detox", classes = L["DispelClass_Monk"], cooldown = 8, showAfterUse = true },
+		[115450] = { texture = GetSpellTexture(115450), name = "Detox", classes = L["DispelClass_MistweaverMonk"], cooldown = 8, healer = true },
+		[360823] = { texture = GetSpellTexture(360823), name = "Naturalize", classes = L["DispelClass_Evoker"], cooldown = 8, healer = true },
+		[374251] = { texture = GetSpellTexture(374251), name = "Cauterizing Flame", classes = L["DispelClass_DevEvoker"], cooldown = 60, showAfterUse = true },
+		[119905] = { texture = GetSpellTexture(119905), name = "Singe Magic", classes = L["DispelClass_WarlockPet"], cooldown = 15, showAfterUse = true },
+		[132411] = { texture = GetSpellTexture(132411), name = "Singe Magic", classes = L["DispelClass_WarlockGrimoire"], cooldown = 15, showAfterUse = true },
+		[212640] = { texture = GetSpellTexture(212640), name = "Mending Bandage", classes = L["DispelClass_SurvivalHunter"], cooldown = 25, showAfterUse = true },
 	}
 
 	sArenaMixin.specToDispel = {
@@ -81,17 +104,17 @@ if isRetail then
 
 else
 	sArenaMixin.dispelData = {
-		[527] = { texture = GetSpellTexture(527), name = "Purify", classes = "Priest", cooldown = 8, healer = true },
-		[4987] = { texture = GetSpellTexture(4987), name = "Cleanse", classes = "Holy Paladin", cooldown = 8, sharedSpecSpellID = true },
-		[77130] = { texture = GetSpellTexture(77130), name = "Purify Spirit", classes = "Resto Shaman", cooldown = 8, healer = true },
-		[51886] = { texture = GetSpellTexture(51886), name = "Cleanse Spirit", classes = "Enh/Ele Shaman", cooldown = 8, showAfterUse = true },
-		[88423] = { texture = GetSpellTexture(88423), name = "Nature's Cure", classes = "Resto Druid", cooldown = 8, healer = true },
-		[2782] = { texture = GetSpellTexture(2782), name = "Remove Corruption", classes = "Druid", cooldown = 8, showAfterUse = true },
-		[475] = { texture = GetSpellTexture(475), name = "Remove Curse", classes = "Mage", cooldown = 8, showAfterUse = true },
-		[115450] = { texture = GetSpellTexture(115450), name = "Detox", classes = "Monk", cooldown = 8, sharedSpecSpellID = true },
-		[103150] = { texture = GetSpellTexture(103150), name = "Singe Magic", classes = "Warlock Pet", cooldown = 10, showAfterUse = true },
-		[132411] = { texture = GetSpellTexture(132411), name = "Singe Magic", classes = "Warlock (Grimoire)", cooldown = 10, showAfterUse = true },
-		[32375] = { texture = GetSpellTexture(32375), name = "Mass Dispel", classes = "Shadow Priest", cooldown = 15, showAfterUse = true },
+		[527] = { texture = GetSpellTexture(527), name = "Purify", classes = L["DispelClass_Priest"], cooldown = 8, healer = true },
+		[4987] = { texture = GetSpellTexture(4987), name = "Cleanse", classes = L["DispelClass_HolyPaladin"], cooldown = 8, sharedSpecSpellID = true },
+		[77130] = { texture = GetSpellTexture(77130), name = "Purify Spirit", classes = L["DispelClass_RestoShaman"], cooldown = 8, healer = true },
+		[51886] = { texture = GetSpellTexture(51886), name = "Cleanse Spirit", classes = L["DispelClass_EnhEleShaman"], cooldown = 8, showAfterUse = true },
+		[88423] = { texture = GetSpellTexture(88423), name = "Nature's Cure", classes = L["DispelClass_RestoDruid"], cooldown = 8, healer = true },
+		[2782] = { texture = GetSpellTexture(2782), name = "Remove Corruption", classes = L["DispelClass_Druid"], cooldown = 8, showAfterUse = true },
+		[475] = { texture = GetSpellTexture(475), name = "Remove Curse", classes = L["DispelClass_Mage"], cooldown = 8, showAfterUse = true },
+		[115450] = { texture = GetSpellTexture(115450), name = "Detox", classes = L["DispelClass_Monk"], cooldown = 8, sharedSpecSpellID = true },
+		[103150] = { texture = GetSpellTexture(103150), name = "Singe Magic", classes = L["DispelClass_WarlockPet"], cooldown = 10, showAfterUse = true },
+		[132411] = { texture = GetSpellTexture(132411), name = "Singe Magic", classes = L["DispelClass_WarlockGrimoire"], cooldown = 10, showAfterUse = true },
+		[32375] = { texture = GetSpellTexture(32375), name = "Mass Dispel", classes = L["DispelClass_ShadowPriest"], cooldown = 15, showAfterUse = true },
 	}
 
 	sArenaMixin.specToDispel = {
@@ -363,7 +386,7 @@ function sArenaFrameMixin:GetDispelData()
 				return {
 					spellID = spellID,
 					texture = dispelInfo.texture,
-					name = dispelInfo.name,
+					name = GetSpellName(spellID, dispelInfo.name),
 				}
 			end
 		end
@@ -439,7 +462,7 @@ function sArenaFrameMixin:GetTestModeDispelData()
 			return {
 				spellID = spellID,
 				texture = dispelInfo.texture,
-				name = dispelInfo.name,
+				name = GetSpellName(spellID, dispelInfo.name),
 			}
 		end
 	end

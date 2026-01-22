@@ -356,6 +356,31 @@ L["Human_AlwaysShowTrinket_Desc"] = "Always show the Alliance trinket texture on
 
 L["Drag_Hint"] = "Ctrl+Shift+Click to drag"
 
+---------------------------------------
+-- Dispel Classes/Specs
+---------------------------------------
+
+L["DispelClass_DiscHolyPriest"] = "Disc/Holy Priest"
+L["DispelClass_ShadowPriest"] = "Shadow Priest"
+L["DispelClass_HolyPaladin"] = "Holy Paladin"
+L["DispelClass_ProtRetPaladin"] = "Prot/Ret Paladin"
+L["DispelClass_RestoShaman"] = "Resto Shaman"
+L["DispelClass_EnhEleShaman"] = "Enh/Ele Shaman"
+L["DispelClass_RestoDruid"] = "Resto Druid"
+L["DispelClass_BalFeralGuardianDruid"] = "Balance/Feral/Guardian Druid"
+L["DispelClass_Mage"] = "Mage"
+L["DispelClass_Monk"] = "Monk"
+L["DispelClass_MistweaverMonk"] = "Mistweaver Monk"
+L["DispelClass_Evoker"] = "Evoker"
+L["DispelClass_DevEvoker"] = "Dev Evoker"
+L["DispelClass_WarlockPet"] = "Warlock Pet"
+L["DispelClass_WarlockGrimoire"] = "Warlock (Grimoire)"
+L["DispelClass_SurvivalHunter"] = "Survival Hunter"
+L["DispelClass_Priest"] = "Priest"
+L["DispelClass_Druid"] = "Druid"
+
+L["Dispel_ShowsAfterUse"] = "Only shows after having been used once"
+
 L["Option_AddonConflict"] = "Addon Conflict"
 L["Option_Layout"] = "Layout"
 L["Option_Test"] = "Test"
