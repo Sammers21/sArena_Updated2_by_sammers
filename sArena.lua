@@ -4757,7 +4757,7 @@ function sArenaMixin:Test()
             local frame = self["arena" .. i]
             for n = 1, 5 do
                 local drFrame = frame[self.drCategories[n]]
-                if drFrame.__MSQ_New_Normal then
+                if drFrame and drFrame.__MSQ_New_Normal then
                     drFrame.__MSQ_New_Normal:SetDesaturated(true)
                     drFrame.__MSQ_New_Normal:SetVertexColor(0, 1, 0, 1)
                 end
