@@ -88,7 +88,7 @@ layout.defaultSettings = {
 
     textures          = {
         generalStatusBarTexture       = "sArena Default",
-        healStatusBarTexture          = "sArena Stripes",
+        healStatusBarTexture          = "sArena Default",
         castbarStatusBarTexture       = "sArena Default",
         castbarUninterruptibleTexture = "sArena Default",
         bgTexture = "Solid",

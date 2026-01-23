@@ -614,7 +614,7 @@ function sArenaMixin:UpdateTextures()
     local layout = db.profile.layoutSettings[db.profile.currentLayout]
     local texKeys = layout.textures or {
         generalStatusBarTexture   = "sArena Default",
-        healStatusBarTexture      = "sArena Stripes",
+        healStatusBarTexture      = "sArena Default",
         castbarStatusBarTexture   = "sArena Default",
         castbarUninterruptibleTexture = "sArena Default",
         bgTexture = "Solid",

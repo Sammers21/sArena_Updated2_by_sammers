@@ -81,7 +81,7 @@ layout.defaultSettings = {
 
     textures          = {
         generalStatusBarTexture       = "Blizzard RetailBar",
-        healStatusBarTexture          = "sArena Stripes 2",
+        healStatusBarTexture          = "sArena Default",
         castbarStatusBarTexture       = "sArena Default",
         castbarUninterruptibleTexture = "sArena Default",
         bgTexture = "Solid",
