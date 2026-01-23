@@ -17,3 +17,8 @@ The project is open source with automated releases. Feel free to contribute here
 *   Credits to `@Bicmex` on twitch for the `IsHealer` function that he wrote.
 *   Credits to `@devai42coding` on Github for helping with tww migration and absor texture being shown
 *   Credits to `@Ma1ithorne` on Github for adding the Blizzard modern layout
+*   Credits to `@Bodify` for the migrating sArena for to Midnight
+
+## Current status since midnight
+
+Currently the project is a fork of Bodify's version with certain changes on top of it.
