@@ -1,6 +1,6 @@
 local layoutName = "BlizzCompact"
 local layout = {}
-layout.name = "|cff00b4ffBlizz|r Compact |A:NewCharacter-Alliance:38:65|a"
+layout.name = "|cff00b4ffBlizz|r Compact"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {

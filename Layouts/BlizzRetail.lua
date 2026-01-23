@@ -1,6 +1,6 @@
 local layoutName = "BlizzRetail"
 local layout = {}
-layout.name = "|cff00b4ffBlizz|r Retail |A:NewCharacter-Alliance:38:65|a"
+layout.name = "|cff00b4ffBlizz|r Retail"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {

@@ -1359,7 +1359,7 @@ function sArenaMixin:GetLayoutOptionsTable(layoutName)
     -- Widgets options
     optionsTable.widgets = {
         order = 6.5,
-        name = L["Category_Widgets"] .. " |A:NewCharacter-Alliance:38:65|a",
+        name = L["Category_Widgets"],
         type = "group",
         get = function(info)
             local widgets = info.handler.db.profile.layoutSettings[layoutName].widgets
@@ -5456,36 +5456,6 @@ else
 
                             return args
                         end)(),
-                    },
-                },
-            },
-            ImportOtherForkSettings = {
-                order = 7,
-                name = L["Option_OthersArena"],
-                desc = L["Option_OthersArena_Desc"],
-                type = "group",
-                args = {
-                    description = {
-                        order = 1,
-                        type = "description",
-                        name = L["Option_ImportDescription"],
-                        fontSize = "medium",
-                    },
-                    convertButton = {
-                        order = 2,
-                        type = "execute",
-                        name = L["Option_ImportSettings"],
-                        desc = L["Option_ImportSettings_Desc"],
-                        func = sArenaMixin.ImportOtherForkSettings,
-                        width = "normal",
-                        disabled = function() return sArenaMixin.conversionInProgress end,
-                    },
-                    conversionStatus = {
-                        order = 2.5,
-                        type = "description",
-                        name = function() return sArenaMixin.conversionStatusText or "" end,
-                        fontSize = "medium",
-                        hidden = function() return not sArenaMixin.conversionStatusText or sArenaMixin.conversionStatusText == "" end,
                     },
                 },
             },

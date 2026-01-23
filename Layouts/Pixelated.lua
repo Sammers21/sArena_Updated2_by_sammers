@@ -1,6 +1,6 @@
 local layoutName = "Pixelated"
 local layout = {}
-layout.name = "Pixelated |A:NewCharacter-Alliance:38:65|a"
+layout.name = "Pixelated"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {

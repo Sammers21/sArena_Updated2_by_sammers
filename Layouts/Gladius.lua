@@ -1,6 +1,6 @@
 local layoutName = "Gladius"
 local layout = {}
-layout.name = "Gladius |A:NewCharacter-Alliance:38:65|a"
+layout.name = "Gladius"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {
