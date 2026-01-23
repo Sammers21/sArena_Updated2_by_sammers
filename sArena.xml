@@ -33,7 +33,7 @@
     <Script file="Layouts\BlizzCompact.lua"/>
     <Script file="Layouts\BlizzTourney.lua"/>
     <Script file="Layouts\BlizzTarget.lua"/>
-    <Script file="Layouts\Gladiuish.lua"/>
+    <Script file="Layouts\Gladius.lua"/>
     <Script file="Layouts\Pixelated.lua"/>
     <Script file="Layouts\Xaryu.lua"/>
 

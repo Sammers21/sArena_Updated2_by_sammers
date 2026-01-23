@@ -1,17 +1,14 @@
 sArenaMixin = {}
 sArenaFrameMixin = {}
 
--- Retail-only version - no multi-version support needed
+-- Retail/Midnight only - legacy version support removed
 sArenaMixin.isRetail = true
 sArenaMixin.isMidnight = true
-sArenaMixin.isMoP = false
-sArenaMixin.isWrath = false
-sArenaMixin.isTBC = false
 
 sArenaMixin.layouts = {}
 sArenaMixin.defaultSettings = {
     profile = {
-        currentLayout = "Gladiuish",
+        currentLayout = "BlizzArena",
         classColors = true,
         showNames = true,
         hidePowerText = true,

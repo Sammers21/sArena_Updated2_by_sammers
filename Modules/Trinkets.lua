@@ -1,5 +1,3 @@
-local isRetail = sArenaMixin.isRetail
-local isMidnight = sArenaMixin.isMidnight
 local GetSpellTexture = GetSpellTexture or C_Spell.GetSpellTexture
 
 function sArenaFrameMixin:FindTrinket()
@@ -16,9 +14,9 @@ function sArenaFrameMixin:GetFactionTrinketIcon()
     end
 end
 
--- Helper function to check if we should force trinket display for humans in MoP
+-- Helper function to check if we should force trinket display for humans (legacy, always returns false for Retail/Midnight)
 function sArenaFrameMixin:ShouldForceHumanTrinket()
-    return not isRetail and self.race == "Human" and self.parent.db.profile.forceShowTrinketOnHuman
+    return false
 end
 
 function sArenaFrameMixin:UpdateTrinketIcon(available)
@@ -48,13 +46,8 @@ function sArenaFrameMixin:UpdateTrinketIcon(available)
 end
 
 local function GetArenaCCInfo(unit)
-    if isRetail then
-        local spellID, startTime, duration = C_PvP.GetArenaCrowdControlInfo(unit)
-        return spellID, startTime, duration
-    else
-        local spellID, itemID, startTime, duration = C_PvP.GetArenaCrowdControlInfo(unit)
-        return spellID, startTime, duration
-    end
+    local spellID, startTime, duration = C_PvP.GetArenaCrowdControlInfo(unit)
+    return spellID, startTime, duration
 end
 
 function sArenaFrameMixin:UpdateTrinket()
@@ -76,18 +69,9 @@ function sArenaFrameMixin:UpdateTrinket()
             -- Set the trinket texture AFTER determining racial placement but BEFORE updating racial
             local trinketTexture
             if spellTextureNoOverride then
-                if isRetail then
-                    trinketTexture = spellTextureNoOverride
-                else
-                    trinketTexture = self:GetFactionTrinketIcon()
-                end
+                trinketTexture = spellTextureNoOverride
             else
-                -- Handle MoP-specific Human trinket logic
-                if not isRetail and self.race == "Human" and self.parent.db.profile.forceShowTrinketOnHuman then
-                    trinketTexture = self:GetFactionTrinketIcon()  -- Show Alliance trinket even if not equipped
-                else
-                    trinketTexture = sArenaMixin.noTrinketTexture     -- Surrender flag if no trinket
-                end
+                trinketTexture = sArenaMixin.noTrinketTexture     -- Surrender flag if no trinket
             end
 
             -- Handle racial updates based on trinket state
@@ -113,57 +97,7 @@ function sArenaFrameMixin:UpdateTrinket()
 
             self:UpdateTrinketIcon(true)
         end
-        if isMidnight then
-            -- if (self.Trinket.spellID) and not self.Trinket.Cooldown:IsShown() then
-            --     if self.Trinket.spellID and (self.Trinket.Texture:GetTexture() ~= sArenaMixin.noTrinketTexture)then
-            --         if self.updateRacialOnTrinketSlot then
-            --             local racialDuration = self:GetRacialDuration()
-            --             self.Trinket.Cooldown:SetCooldown(startTime, racialDuration * 1000)
-            --         else
-            --             self.Trinket.Cooldown:SetCooldown(startTime, duration)
-            --         end
-            --     end
-            --     if self.parent.db.profile.colorTrinket then
-            --         self.Trinket.Texture:SetColorTexture(1,0,0)
-            --     else
-            --         if not self.updateRacialOnTrinketSlot then
-            --             self.Trinket.Texture:SetDesaturated(self.parent.db.profile.desaturateTrinketCD)
-            --         end
-            --     end
-            -- else
-            --     self.Trinket.Cooldown:Clear()
-            --     if self.parent.db.profile.colorTrinket then
-            --         self.Trinket.Texture:SetColorTexture(0,1,0)
-            --     else
-            --         self.Trinket.Texture:SetDesaturated(false)
-            --     end
-            -- end
-        else
-            if (startTime ~= 0 and duration ~= 0 and self.Trinket.spellID) then
-                if self.Trinket.spellID and (self.Trinket.Texture:GetTexture() ~= sArenaMixin.noTrinketTexture)then
-                    if self.updateRacialOnTrinketSlot then
-                        local racialDuration = self:GetRacialDuration()
-                        self.Trinket.Cooldown:SetCooldown(startTime / 1000.0, racialDuration)
-                    else
-                        self.Trinket.Cooldown:SetCooldown(startTime / 1000.0, duration / 1000.0)
-                    end
-                end
-                if self.parent.db.profile.colorTrinket then
-                    self.Trinket.Texture:SetColorTexture(1,0,0)
-                else
-                    if not self.updateRacialOnTrinketSlot then
-                        self.Trinket.Texture:SetDesaturated(self.parent.db.profile.desaturateTrinketCD)
-                    end
-                end
-            else
-                self.Trinket.Cooldown:Clear()
-                if self.parent.db.profile.colorTrinket then
-                    self.Trinket.Texture:SetColorTexture(0,1,0)
-                else
-                    self.Trinket.Texture:SetDesaturated(false)
-                end
-            end
-        end
+        -- Midnight: Trinket CD is handled by the game via C_PvP.GetArenaCrowdControlInfo
     end
 end
 

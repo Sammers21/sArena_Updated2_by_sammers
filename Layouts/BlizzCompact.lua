@@ -386,13 +386,6 @@ function layout:Initialize(frame)
     frameTexture:SetTexCoord(0, 1, 0, 1)
     frameTexture:Show()
 
-    if not sArenaMixin.isRetail then
-        trinket.Cooldown:SetUseCircularEdge(true)
-        racial.Cooldown:SetUseCircularEdge(true)
-        frame.ClassIcon.Cooldown:SetUseCircularEdge(true)
-        dispel.Cooldown:SetUseCircularEdge(true)
-    end
-
     self:UpdateOrientation(frame)
 end
 
