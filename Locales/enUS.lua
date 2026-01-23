@@ -123,6 +123,9 @@ L["Category_DiminishingReturns"] = "Diminishing Returns"
 L["Category_Widgets"] = "Widgets"
 L["Category_TextSettings"] = "Text Settings"
 L["Category_ClassIcon"] = "Class Icon"
+L["Category_CombatLogging"] = "Combat Logging"
+L["Option_EnableCombatLogging"] = "Enable Combat Logging"
+L["Option_EnableCombatLogging_Desc"] = "Automatically enable combat logging when entering arenas or battlegrounds. Logs are saved to WoW's Logs folder for analysis on sites like WoWArenaLogs."
 
 ---------------------------------------
 -- Textures

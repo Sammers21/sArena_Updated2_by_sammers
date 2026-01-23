@@ -32,5 +32,6 @@ sArenaMixin.defaultSettings = {
         },
         layoutSettings = {},
         invertClassIconCooldown = true,
+        enableCombatLogging = false,
     }
 }

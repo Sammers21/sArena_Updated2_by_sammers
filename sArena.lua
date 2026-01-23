@@ -1011,6 +1011,14 @@ function sArenaMixin:OnEvent(event, ...)
             self:SetupCustomCD()
         end
 
+        -- Combat logging for arenas and battlegrounds
+        if self.db and self.db.profile.enableCombatLogging then
+            if instanceType == "arena" or instanceType == "pvp" then
+                LoggingCombat(true)
+                self:Print("Combat logging enabled. Good luck!")
+            end
+        end
+
         if (instanceType == "arena") then
             self:InitializeDRFrames()
 

@@ -5273,189 +5273,24 @@ else
                             return args
                         end)(),
                     },
-                    dispelGroup = {
-                        order = 4,
-                        name = L["Category_Dispels"],
-                        disabled = function() return isMidnight end,
+                   
+                    combatLoggingGroup = {
+                        order = 5,
+                        name = L["Category_CombatLogging"],
                         type = "group",
-                        args = (function()
-                            local args = {
-                                showDispels = {
-                                    order = 0,
-                                    name = L["Option_ShowDispels"],
-                                    desc = L["Option_ShowDispels_Desc"],
-                                    type = "toggle",
-                                    width = "full",
-                                    get = function(info) return info.handler.db.profile.showDispels end,
-                                    set = function(info, val)
-                                        info.handler.db.profile.showDispels = val
-                                        info.handler:Test()
-                                    end,
-                                },
-                                spacer0 = {
-                                    order = 0.5,
-                                    type = "description",
-                                    name = "",
-                                    width = "full",
-                                },
-                            }
-
-                            local healerDispels = {}
-                            local dpsDispels = {}
-
-                            for spellID, data in pairs(sArenaMixin.dispelData or {}) do
-                                if data.healer or data.sharedSpecSpellID then
-                                    healerDispels[spellID] = data
-                                end
-                                if not data.healer or data.sharedSpecSpellID then
-                                    dpsDispels[spellID] = data
-                                end
-                            end
-
-                            local order = 1
-
-                            if next(healerDispels) then
-                                args["healer_dispels"] = {
-                                    order = order,
-                                    name = L["Option_HealerDispels"],
-                                    type = "group",
-                                    inline = true,
-                                    disabled = function(info) return not info.handler.db.profile.showDispels end,
-                                    args = {}
-                                }
-                                order = order + 1
-
-                                local healerOrder = 1
-                                for spellID, data in pairs(healerDispels) do
-                                    -- For MoP shared spells, use separate setting key
-                                    local settingKey = spellID
-                                    if not isRetail and data.sharedSpecSpellID then
-                                        settingKey = spellID .. "_healer"
-                                    end
-
-                                    args["healer_dispels"].args["spell_" .. spellID] = {
-                                        order = healerOrder,
-                                        name = function()
-                                            local spellName = GetSpellInfoCompat(spellID)
-                                            return "|T" .. (data.texture or "") .. ":16|t " .. (spellName or data.name)
-                                        end,
-                                        type = "toggle",
-                                        disabled = function(info) return not info.handler.db.profile.showDispels end,
-                                        get = function(info) return info.handler.db.profile.dispelCategories[settingKey] end,
-                                        set = function(info, val)
-                                            info.handler.db.profile.dispelCategories[settingKey] = val
-                                            for i = 1, 3 do
-                                                local frame = info.handler["arena" .. i]
-                                                if frame then
-                                                    frame:UpdateDispel()
-                                                end
-                                            end
-                                        end,
-                                        desc = function()
-                                            local spellName = GetSpellInfoCompat(spellID)
-                                            local spellDesc = GetSpellDescriptionCompat(spellID)
-
-                                            spellName = spellName or data.name or L["Unknown_Spell"]
-                                            local cooldownText = data.cooldown and string.format(L["Cooldown_Seconds"], data.cooldown) or ""
-
-                                            local tooltipLines = {}
-                                            table.insert(tooltipLines, "|cFFFFD700" .. spellName .. "|r")
-                                            table.insert(tooltipLines, "|cFF87CEEB" .. data.classes .. "|r")
-                                            if spellDesc and spellDesc ~= "" then
-                                                table.insert(tooltipLines, spellDesc)
-                                            end
-                                            if cooldownText ~= "" then
-                                                table.insert(tooltipLines, "|cFF00FF00" .. cooldownText .. "|r")
-                                            end
-                                            table.insert(tooltipLines, "|cFF808080Spell ID: " .. spellID .. "|r")
-
-                                            return table.concat(tooltipLines, "\n\n")
-                                        end,
-                                    }
-                                    healerOrder = healerOrder + 1
-                                end
-                            end
-
-                            if next(dpsDispels) then
-                                args["dps_dispels"] = {
-                                    order = order,
-                                    name = L["Option_DPSDispels"],
-                                    type = "group",
-                                    inline = true,
-                                    disabled = function(info) return not info.handler.db.profile.showDispels end,
-                                    args = {
-                                        description = {
-                                            order = 1,
-                                            type = "description",
-                                            name = L["Option_DPSDispelsNote"],
-                                            fontSize = "medium",
-                                        }
-                                    }
-                                }
-                                order = order + 1
-
-                                local dpsOrder = 2
-                                for spellID, data in pairs(dpsDispels) do
-
-                                    local settingKey = spellID
-                                    if not sArenaMixin.isRetail and data.sharedSpecSpellID then
-                                        settingKey = spellID .. "_dps"
-                                    end
-
-                                    args["dps_dispels"].args["spell_" .. spellID] = {
-                                        order = dpsOrder,
-                                        name = function()
-                                            local spellName = GetSpellInfoCompat(spellID)
-                                            return "|T" .. (data.texture or "134400") .. ":16|t " .. (spellName or data.name)
-                                        end,
-                                        type = "toggle",
-                                        disabled = function(info) return not info.handler.db.profile.showDispels end,
-                                        get = function(info) return info.handler.db.profile.dispelCategories[settingKey] end,
-                                        set = function(info, val)
-                                            info.handler.db.profile.dispelCategories[settingKey] = val
-                                            for i = 1, 3 do
-                                                local frame = info.handler["arena" .. i]
-                                                if frame then
-                                                    frame:UpdateDispel()
-                                                end
-                                            end
-                                        end,
-                                        desc = function()
-                                            local spellName = GetSpellInfoCompat(spellID)
-                                            local spellDesc = GetSpellDescriptionCompat(spellID)
-
-                                            spellName = spellName or data.name or L["Unknown_Spell"]
-                                            local cooldownText = data.cooldown and string.format(L["Cooldown_Seconds"], data.cooldown) or ""
-
-                                            local tooltipLines = {}
-                                            table.insert(tooltipLines, "|cFFFFD700" .. spellName .. "|r")
-                                            table.insert(tooltipLines, "|cFF87CEEB" .. data.classes .. "|r")
-                                            if spellDesc and spellDesc ~= "" then
-                                                table.insert(tooltipLines, spellDesc)
-                                            end
-                                            if cooldownText ~= "" then
-                                                table.insert(tooltipLines, "|cFF00FF00" .. cooldownText .. "|r")
-                                            end
-                                            table.insert(tooltipLines, "|cFF808080Spell ID: " .. spellID .. "|r")
-                                            table.insert(tooltipLines, "|cFFFFA500" .. L["Dispel_ShowsAfterUse"] .. "|r")
-
-                                            return table.concat(tooltipLines, "\n\n")
-                                        end,
-                                    }
-                                    dpsOrder = dpsOrder + 1
-                                end
-                            end
-
-                            args["betaNotice"] = {
-                                order = 999,
-                                type = "description",
-                                name = L["Option_DispelsBetaNotice"],
-                                fontSize = "medium",
+                        args = {
+                            enableCombatLogging = {
+                                order = 1,
+                                name = L["Option_EnableCombatLogging"],
+                                desc = L["Option_EnableCombatLogging_Desc"],
+                                type = "toggle",
                                 width = "full",
-                            }
-
-                            return args
-                        end)(),
+                                get = function(info) return info.handler.db.profile.enableCombatLogging end,
+                                set = function(info, val)
+                                    info.handler.db.profile.enableCombatLogging = val
+                                end,
+                            },
+                        },
                     },
                 },
             },
