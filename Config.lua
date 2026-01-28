@@ -3,6 +3,20 @@ local isRetail = sArenaMixin.isRetail
 local isMidnight = sArenaMixin.isMidnight
 local L = sArenaMixin.L
 
+-- Track Ctrl+Shift state for drag hint
+local isDragModifierActive = false
+local dragHintFrame = CreateFrame("Frame")
+dragHintFrame:RegisterEvent("MODIFIER_STATE_CHANGED")
+dragHintFrame:SetScript("OnEvent", function(self, event, key, down)
+    local ctrlDown = IsControlKeyDown()
+    local shiftDown = IsShiftKeyDown()
+    local newState = ctrlDown and shiftDown
+    if newState ~= isDragModifierActive then
+        isDragModifierActive = newState
+        LibStub("AceConfigRegistry-3.0"):NotifyChange("sArena")
+    end
+end)
+
 local function GetSpellInfoCompat(spellID)
     if not spellID then
         return nil
@@ -4276,7 +4290,13 @@ else
             },
             dragNotice = {
                 order = 4,
-                name = ("|T132961:16|t |cffff3300"..L["Drag_Hint"].."|r"),
+                name = function()
+                    if isDragModifierActive then
+                        return "|cff00ff00" .. L["Drag_Hint_Active"] .. "|r"
+                    else
+                        return "|cffff3300" .. L["Drag_Hint"] .. "|r"
+                    end
+                end,
                 type = "description",
                 fontSize = "medium",
                 width = 1.5,

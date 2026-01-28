@@ -1194,12 +1194,13 @@ function sArenaMixin:Initialize()
     LibStub("AceConfig-3.0"):RegisterOptionsTable("sArena", self.optionsTable)
     LibStub("AceConfigDialog-3.0"):SetDefaultSize("sArena", compatIssue and 520 or 860, compatIssue and 300 or 690)
     LibStub("AceConsole-3.0"):RegisterChatCommand("sarena", ChatCommand)
+    LibStub("AceConsole-3.0"):RegisterChatCommand("sa", ChatCommand)
     LibStub("AceConsole-3.0"):RegisterChatCommand("sarenasend", TEMPShareCollectedData)
     if not compatIssue then
         self:DatabaseCleanup(db)
         self:UpdateDecimalThreshold()
         self:UpdateNoTrinketTexture()
-        LibStub("AceConfigDialog-3.0"):AddToBlizOptions("sArena", "sArena Updated 2 by sammers ")
+        LibStub("AceConfigDialog-3.0"):AddToBlizOptions("sArena", "sArena by sammers")
         self:SetLayout(_, db.profile.currentLayout)
     else
         C_Timer.After(5, function()
@@ -2362,15 +2363,15 @@ function sArenaMixin:AddMasqueSupport()
     local Masque = LibStub("Masque", true)
     masqueOn = true
 
-    local sArenaClass = Masque:Group("sArena Updated 2 by sammers ", "Class/Aura")
-    local sArenaTrinket = Masque:Group("sArena Updated 2 by sammers ", "Trinket")
-    local sArenaSpecIcon = Masque:Group("sArena Updated 2 by sammers ", "SpecIcon")
-    local sArenaRacial = Masque:Group("sArena Updated 2 by sammers ", "Racial")
-    local sArenaDispel = Masque:Group("sArena Updated 2 by sammers ", "Dispel")
-    local sArenaDRs = Masque:Group("sArena Updated 2 by sammers ", "DRs")
-    local sArenaFrame = Masque:Group("sArena Updated 2 by sammers ", "Frame")
-    local sArenaCastbar = Masque:Group("sArena Updated 2 by sammers ", "Castbar")
-    local sArenaCastbarIcon = Masque:Group("sArena Updated 2 by sammers ", "Castbar Icon")
+    local sArenaClass = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Class/Aura")
+    local sArenaTrinket = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Trinket")
+    local sArenaSpecIcon = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "SpecIcon")
+    local sArenaRacial = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Racial")
+    local sArenaDispel = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Dispel")
+    local sArenaDRs = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "DRs")
+    local sArenaFrame = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Frame")
+    local sArenaCastbar = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Castbar")
+    local sArenaCastbarIcon = Masque:Group("|TInterface\\Icons\\Achievement_rankedpvp_07:16|t sArena Updated 2 by sammers ", "Castbar Icon")
 
     function sArenaMixin:RefreshMasque()
         sArenaClass:ReSkin(true)
@@ -3837,22 +3838,43 @@ function sArenaMixin:Test()
         local t = f:CreateFontString(nil, "OVERLAY")
         t:SetFontObject("GameFontHighlightLarge")
         t:SetFont(self.pFont, 12, "OUTLINE")
-        t:SetText("|T132961:16|t "..L["Drag_Hint"])
+        t:SetText(L["Drag_Hint"])
         t:SetPoint("BOTTOM", topFrame, "TOP", 17, 17)
+        f.dragHintText = t
 
         local bg = f:CreateTexture(nil, "BACKGROUND", nil, -1)
         bg:SetPoint("TOPLEFT", t, "TOPLEFT", -6, 4)
         bg:SetPoint("BOTTOMRIGHT", t, "BOTTOMRIGHT", 6, -3)
         bg:SetAtlas("PetList-ButtonBackground")
+        f.dragHintBg = bg
 
         local t2 = f:CreateFontString(nil, "OVERLAY")
         t2:SetFontObject("GameFontHighlightLarge")
         t2:SetFont(self.pFont, 21, "OUTLINE")
-        t2:SetText("sArena Updated 2 by sammers ")
+        t2:SetText("|TInterface\\Icons\\Achievement_rankedpvp_07:21|t sArena Updated 2 by sammers ")
         t2:SetPoint("BOTTOM", t, "TOP", 3, 5)
 
         TestTitle:SetPoint("TOPLEFT", t, "TOPLEFT", -5, 45)
         TestTitle:SetPoint("BOTTOMRIGHT", t, "BOTTOMRIGHT", 5, -5)
+
+        -- Track modifier state for drag hint
+        f.modifierActive = false
+        f:RegisterEvent("MODIFIER_STATE_CHANGED")
+        f:SetScript("OnEvent", function(frame, event)
+            local ctrlDown = IsControlKeyDown()
+            local shiftDown = IsShiftKeyDown()
+            local newState = ctrlDown and shiftDown
+            if newState ~= frame.modifierActive then
+                frame.modifierActive = newState
+                if newState then
+                    frame.dragHintText:SetText(L["Drag_Hint_Active"])
+                    frame.dragHintText:SetTextColor(0, 1, 0)
+                else
+                    frame.dragHintText:SetText(L["Drag_Hint"])
+                    frame.dragHintText:SetTextColor(1, 1, 1)
+                end
+            end
+        end)
 
         self:SetupDrag(TestTitle, self, nil, "UpdateFrameSettings")
     end

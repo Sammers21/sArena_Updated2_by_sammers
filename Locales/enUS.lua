@@ -358,6 +358,7 @@ L["Human_AlwaysShowTrinket"] = "Always Show Alliance Trinket for Humans"
 L["Human_AlwaysShowTrinket_Desc"] = "Always show the Alliance trinket texture on Human players, even if they don't have a trinket equipped."
 
 L["Drag_Hint"] = "Ctrl+Shift+Click to drag"
+L["Drag_Hint_Active"] = "You can Move it now!"
 
 ---------------------------------------
 -- Dispel Classes/Specs

@@ -355,6 +355,7 @@ L["Human_AlwaysShowTrinket"] = "Mostra sempre monile Alleanza per gli umani"
 L["Human_AlwaysShowTrinket_Desc"] = "Mostra sempre la texture del monile dell'Alleanza sui giocatori umani, anche se non hanno un monile equipaggiato."
 
 L["Drag_Hint"] = "Ctrl+Shift+Click per trascinare"
+L["Drag_Hint_Active"] = "Puoi spostarlo ora!"
 
 L["Option_AddonConflict"] = "Conflitto addon"
 L["Option_Layout"] = "Layout"
