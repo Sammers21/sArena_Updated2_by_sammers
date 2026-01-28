@@ -36,6 +36,7 @@
     <Script file="Layouts\Gladius.lua"/>
     <Script file="Layouts\Pixelated.lua"/>
     <Script file="Layouts\Xaryu.lua"/>
+    <Script file="Layouts\Bicmex.lua"/>
 
     <Frame name="sArenaDRFrameTemplate" enablemouse="true" movable="true" hidden="true" virtual="true">
         <Size x="40" y="40"/>

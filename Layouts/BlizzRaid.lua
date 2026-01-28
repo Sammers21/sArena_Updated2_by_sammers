@@ -70,7 +70,7 @@ layout.defaultSettings = {
             scale = 1,
         },
         targetIndicator = {
-            enabled = true,
+            enabled = false,
             posX = 9,
             posY = 4,
             scale = 1,

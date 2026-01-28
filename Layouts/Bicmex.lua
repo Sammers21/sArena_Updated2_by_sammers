@@ -1,56 +1,60 @@
-local layoutName = "Gladius"
+local layoutName = "Bicmex"
 local layout = {}
-layout.name = "|TInterface\\Icons\\achievement_featsofstrength_gladiator_01:16|t Gladius"
+layout.name = "|TInterface\\Icons\\ability_hunter_camouflage:16|t |cFFABD473Bicmex|r"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {
-    posX = 355,
-    posY = 131,
-    scale = 1.15,
+    posX = 350,
+    posY = 130,
+    scale = 1.2,
     classIconFontSize = 14,
-    spacing = 35,
+    spacing = 37,
     growthDirection = 1,
     specIcon = {
-        posX = -21,
+        posX = -24,
         posY = -2,
         scale = 1,
     },
     trinket = {
-        posX = 104,
+        posX = 107,
         posY = 0,
         scale = 1,
         fontSize = 14,
     },
     racial = {
-        posX = 180,
-        posY = 0,
-        scale = 0.8,
+        posX = 107,
+        posY = -41,
+        scale = 1,
         fontSize = 14,
     },
     dispel = {
-        posX = 225,
+        posX = 196,
         posY = 0,
-        scale = 0.8,
+        scale = 1,
         fontSize = 14,
     },
     castBar = {
-        posX = 8,
-        posY = -23.5,
-        scale = 1.35,
-        width = 108,
-        iconScale = 1,
+        posX = 22,
+        posY = -42,
+        scale = 1.0,
+        width = 130,
+        iconScale = 1.2,
         iconPosX = 5,
         keepDefaultModernTextures = true,
         recolorCastbar = false,
+        hideBorderShield = true,
     },
     dr = {
-        posX = -101,
+        posX = -109,
         posY = 0,
-        size = 28,
+        size = 30,
         borderSize = 2.5,
         fontSize = 12,
-        spacing = 6,
+        spacing = 4,
         growthDirection = 4,
+        brightDRBorder = true,
+        blackDRBorder = true,
+        disableDRBorder = true,
     },
     widgets = {
         combatIndicator = {
@@ -80,7 +84,7 @@ layout.defaultSettings = {
         alwaysShow = true,
     },
 
-    textures          = {
+    textures = {
         generalStatusBarTexture       = "sArena Default",
         healStatusBarTexture          = "sArena Default",
         castbarStatusBarTexture       = "sArena Default",
@@ -92,11 +96,11 @@ layout.defaultSettings = {
 
     -- custom layout settings
     frameFont = "Prototype",
-    cdFont  = "Prototype",
+    cdFont = "Prototype",
     changeFont = true,
-    width = 168,
-    height = 44,
-    powerBarHeight = 9,
+    width = 170,
+    height = 48,
+    powerBarHeight = 10,
     mirrored = true,
     classicBars = false,
     replaceClassIcon = true,
@@ -104,9 +108,13 @@ layout.defaultSettings = {
 
     textSettings = {
         nameAnchor = "LEFT",
+        nameSize = 1,
         healthAnchor = "RIGHT",
+        healthSize = 1,
         powerAnchor = "RIGHT",
+        powerSize = 1,
         specNameAnchor = "LEFT",
+        specNameSize = 0.9,
     },
 }
 
@@ -190,6 +198,17 @@ function layout:Initialize(frame)
         setupOptionsTable(frame.parent)
     end
 
+    -- Set castbar width to match health bar width (frame width minus class icon width)
+    local classIconSize = self.db.height - 4
+    local racialHeight = 44
+    self.db.castBar.width = self.db.width - classIconSize
+    -- Set castbar icon scale to match class icon size (default icon is 16x16)
+    self.db.castBar.iconScale = classIconSize / 16
+    -- Set castbar height to match racial height
+    self.db.castBar.height = racialHeight - 3
+    -- Set DR icon size to match class icon size
+    self.db.dr.size = classIconSize
+
     if (frame:GetID() == sArenaMixin.maxArenaOpponents) then
         frame.parent:UpdateCastBarSettings(self.db.castBar)
         frame.parent:UpdateDRSettings(self.db.dr)
@@ -202,12 +221,12 @@ function layout:Initialize(frame)
     end
 
     frame:SetSize(self.db.width, self.db.height)
-    frame.SpecIcon:SetSize(22, 22)
-    frame.Trinket:SetSize(40, 40)
-    frame.Dispel:SetSize(40, 40)
-    frame.Racial:SetSize(40, 40)
-    frame.Name:SetTextColor(1,1,1)
-    frame.SpecNameText:SetTextColor(1,1,1)
+    frame.SpecIcon:SetSize(24, 24)
+    frame.Trinket:SetSize(44, 44)
+    frame.Dispel:SetSize(44, 44)
+    frame.Racial:SetSize(44, 44)
+    frame.Name:SetTextColor(1, 1, 1)
+    frame.SpecNameText:SetTextColor(1, 1, 1)
 
     frame.Trinket.Cooldown:SetSwipeTexture(1)
     frame.Trinket.Cooldown:SetSwipeColor(0, 0, 0, 0.55)
@@ -217,7 +236,7 @@ function layout:Initialize(frame)
 
     frame.PowerBar:SetHeight(self.db.powerBarHeight)
 
-    frame.ClassIcon:SetSize(self.db.height-4, self.db.height-4)
+    frame.ClassIcon:SetSize(self.db.height - 4, self.db.height - 4)
     frame.ClassIcon:Show()
 
     local f = frame.Name
@@ -248,7 +267,7 @@ function layout:UpdateOrientation(frame)
     healthBar:ClearAllPoints()
     powerBar:ClearAllPoints()
     frame.ClassIcon:ClearAllPoints()
-    frame.ClassIcon:SetSize(self.db.height-4, self.db.height-4)
+    frame.ClassIcon:SetSize(self.db.height - 4, self.db.height - 4)
 
     if self.db.widgets then
         local w = self.db.widgets

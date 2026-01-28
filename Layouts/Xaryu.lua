@@ -1,5 +1,6 @@
 local layoutName = "Xaryu"
 local layout = {}
+layout.name = "|TInterface\\Icons\\classicon_mage:16|t Xaryu"
 local L = sArenaMixin.L
 
 layout.defaultSettings = {
@@ -57,6 +58,7 @@ layout.defaultSettings = {
             scale = 0.9,
         },
         targetIndicator = {
+            enabled = false,
             posX = 0,
             posY = 0,
             scale = 1,

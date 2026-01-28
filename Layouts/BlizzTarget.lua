@@ -58,6 +58,7 @@ layout.defaultSettings = {
             scale = 1,
         },
         targetIndicator = {
+            enabled = false,
             posX = 0,
             posY = 0,
             scale = 1,
