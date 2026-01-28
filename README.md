@@ -29,7 +29,7 @@ Currently the project is a fork of Bodify's version with certain changes on top 
 
 *   Added new **Bicmex layout** - a new arena frame layout option
 *   Added **drag hint functionality** - hold Ctrl+Shift to see drag hints for repositioning frames
-*   Added **combat logging feature** with toggle option in settings
+*   Added **auto enable combat logging on arena feature** with toggle option in settings
 *   Localization support for Russian, German, Italian, Korean, Spanish, Chinese
 
 **Layout Changes:**
