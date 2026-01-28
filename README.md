@@ -17,8 +17,35 @@ The project is open source with automated releases. Feel free to contribute here
 *   Credits to `@Bicmex` on twitch for the `IsHealer` function that he wrote.
 *   Credits to `@devai42coding` on Github for helping with tww migration and absor texture being shown
 *   Credits to `@Ma1ithorne` on Github for adding the Blizzard modern layout
-*   Credits to `@Bodify` for the migrating sArena for to Midnight
+*   Credits to `@Bodify` for the migrating sArena for to Midnight and adding new visual custimization options. 
 
 ## Current status since midnight
 
 Currently the project is a fork of Bodify's version with certain changes on top of it.
+
+### Changelog (since fork)
+
+**New Features:**
+
+*   Added new **Bicmex layout** - a new arena frame layout option
+*   Added **drag hint functionality** - hold Ctrl+Shift to see drag hints for repositioning frames
+*   Added **combat logging feature** with toggle option in settings
+*   Added localization support for new features (English, Italian, Korean)
+
+**Layout Changes:**
+
+*   Renamed "Gladiuish" layout to "Gladius"
+*   Default layout changed to "BlizzArena" for retail
+*   Target widget is now **disabled by default** in most layouts
+*   Removed character icons from layout names for cleaner display
+*   Unified heal status bar texture to "sArena Default" across all layouts
+
+**Bug Fixes & Improvements:**
+
+*   Improved dispel localization with better fallback spell name handling
+
+**Code Cleanup:**
+
+*   Significant code refactoring and cleanup (~2200 lines removed)
+*   Removed unused castbar textures (UI-CastingBar-*.tga files)
+*   Streamlined module code (Auras, DiminishingReturns, Dispels, ModernCastbar, Racials, Trinkets)
