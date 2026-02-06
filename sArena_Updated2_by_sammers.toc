@@ -2,7 +2,7 @@
 ## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced Arena Frames
 ## Version: 2026.1.1
-## Author: Sammers
+## Author: Sammers (fork of sArena by Stako/Bodify)
 ## IconTexture: Interface\ICONS\Achievement_arena_2v2_7
 ## OptionalDeps: sArena_Reloaded
 ## X-Category: PvP/Arena
