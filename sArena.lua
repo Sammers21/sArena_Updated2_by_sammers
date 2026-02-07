@@ -92,8 +92,8 @@ function sArenaMixin:OnLoad()
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    -- Racials, interrupts, and auras are handled via COMBAT_LOG_EVENT_UNFILTERED
-    -- to avoid secret value restrictions on arena unit events
+    -- COMBAT_LOG_EVENT_UNFILTERED is protected on Midnight (12.x)
+    -- Racials, interrupts, and DRs via CLEU are not available
 end
 
 function sArenaMixin:OnEvent(event, ...)
@@ -106,25 +106,8 @@ function sArenaMixin:OnEvent(event, ...)
         self:SetMouseState(true)
         if (instanceType == "arena") then
             self.inArena = true
-            self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
         else
             self.inArena = false
-            self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-        end
-    elseif (event == "COMBAT_LOG_EVENT_UNFILTERED") then
-        local _, combatEvent, _, sourceGUID, _, _, _, destGUID, _, _, _, spellID, _, _, auraType = CombatLogGetCurrentEventInfo()
-        for i = 1, 3 do
-            local ArenaFrame = self["arena" .. i]
-            if (sourceGUID == UnitGUID("arena" .. i)) then
-                ArenaFrame:FindRacial(combatEvent, spellID)
-            end
-            if (destGUID == UnitGUID("arena" .. i)) then
-                ArenaFrame:FindInterrupt(combatEvent, spellID)
-                if (auraType == "DEBUFF") then
-                    ArenaFrame:FindDR(combatEvent, spellID)
-                end
-                return
-            end
         end
     end
 end
