@@ -1,5 +1,4 @@
 local function getLayoutTable()
-    addonProtection()
     local t = {}
 
     for k, _ in pairs(sArenaMixin.layouts) do

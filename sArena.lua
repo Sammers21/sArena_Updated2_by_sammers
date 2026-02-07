@@ -1,14 +1,9 @@
-addonProtection()
 sArenaMixin = {}
 sArenaFrameMixin = {}
 sArenaCastingBarExtensionMixin = {}
 sArenaMixin.layouts = {}
 
--- Midnight (WoW 12.x) detection
-local isMidnight = (select(4, GetBuildInfo()) >= 120000)
-sArenaMixin.isMidnight = isMidnight
-
--- Spell API shim for cross-version compatibility
+-- Spell API shim
 local GetSpellTexture = GetSpellTexture or C_Spell.GetSpellTexture
 
 -- Font shim: Game10Font_o1 was removed in Midnight
@@ -53,7 +48,6 @@ local emptyLayoutOptionsTable = {
     },
 }
 local blizzFrame
-local FEIGN_DEATH = C_Spell.GetSpellName(5384) -- Localized name for Feign Death
 
 -- make local vars of globals that are used with high frequency
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
@@ -61,14 +55,12 @@ local UnitGUID = UnitGUID
 local UnitChannelInfo = UnitChannelInfo
 local GetTime = GetTime
 local After = C_Timer.After
-local UnitAura = C_UnitAuras.GetAuraDataByIndex
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitPowerMax = UnitPowerMax
 local UnitPower = UnitPower
 local UnitPowerType = UnitPowerType
 local UnitIsDeadOrGhost = UnitIsDeadOrGhost
-local FindAuraByName = AuraUtil.FindAuraByName
 local ceil = ceil
 local AbbreviateLargeNumbers = AbbreviateLargeNumbers
 local UnitFrameHealPredictionBars_Update = UnitFrameHealPredictionBars_Update_Sarena
@@ -77,55 +69,15 @@ local function UpdateBlizzVisibility(instanceType)
     -- hide blizz arena frames while in arena
     if (InCombatLockdown()) then return end
 
-    if isMidnight then
-        -- On Midnight, hide CompactArenaFrame instead of legacy frames
-        if CompactArenaFrame then
-            if (not blizzFrame) then
-                blizzFrame = CreateFrame("Frame")
-                blizzFrame:Hide()
-            end
-            if (instanceType == "arena") then
-                CompactArenaFrame:SetParent(blizzFrame)
-                if CompactArenaFrameTitle then
-                    CompactArenaFrameTitle:SetParent(blizzFrame)
-                end
-            end
+    if CompactArenaFrame then
+        if (not blizzFrame) then
+            blizzFrame = CreateFrame("Frame")
+            blizzFrame:Hide()
         end
-        return
-    end
-
-    -- Legacy (11.x) logic
-    if (C_AddOns.IsAddOnLoaded("ElvUI")) then return end
-
-    if (not blizzFrame) then
-        blizzFrame = CreateFrame("Frame", nil, UIParent)
-        blizzFrame:SetSize(1, 1)
-        blizzFrame:SetPoint("RIGHT", UIParent, "RIGHT", 500, 0)
-        blizzFrame:Hide()
-    end
-
-    for i = 1, 5 do
-        local arenaFrame = _G["ArenaEnemyMatchFrame" .. i]
-        local prepFrame = _G["ArenaEnemyPrepFrame" .. i]
-
-        arenaFrame:ClearAllPoints()
-        prepFrame:ClearAllPoints()
-
         if (instanceType == "arena") then
-            arenaFrame:SetParent(blizzFrame)
-            arenaFrame:SetPoint("CENTER", blizzFrame, "CENTER")
-            prepFrame:SetParent(blizzFrame)
-            prepFrame:SetPoint("CENTER", blizzFrame, "CENTER")
-        else
-            arenaFrame:SetParent(ArenaEnemyFramesContainer)
-            prepFrame:SetParent(ArenaEnemyPrepFramesContainer)
-
-            if (i == 1) then
-                arenaFrame:SetPoint("TOP", arenaFrame:GetParent(), "TOP")
-                prepFrame:SetPoint("TOP", prepFrame:GetParent(), "TOP")
-            else
-                arenaFrame:SetPoint("TOP", "ArenaEnemyMatchFrame" .. i - 1, "BOTTOM", 0, -20)
-                prepFrame:SetPoint("TOP", "ArenaEnemyPrepFrame" .. i - 1, "BOTTOM", 0, -20)
+            CompactArenaFrame:SetParent(blizzFrame)
+            if CompactArenaFrameTitle then
+                CompactArenaFrameTitle:SetParent(blizzFrame)
             end
         end
     end
@@ -140,13 +92,8 @@ function sArenaMixin:OnLoad()
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    -- On Midnight, register unit events early in OnLoad (before any taint can occur)
-    -- Processing is gated by self.inArena flag set in PLAYER_ENTERING_WORLD
-    if isMidnight then
-        self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-        self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-        self:RegisterEvent("UNIT_AURA")
-    end
+    -- Racials, interrupts, and auras are handled via COMBAT_LOG_EVENT_UNFILTERED
+    -- to avoid secret value restrictions on arena unit events
 end
 
 function sArenaMixin:OnEvent(event, ...)
@@ -159,94 +106,13 @@ function sArenaMixin:OnEvent(event, ...)
         self:SetMouseState(true)
         if (instanceType == "arena") then
             self.inArena = true
-            if not isMidnight then
-                self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-            end
+            self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
         else
             self.inArena = false
-            if not isMidnight then
-                self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-            end
-        end
-    elseif (event == "UNIT_SPELLCAST_SUCCEEDED") then
-        if not self.inArena then return end
-        -- 12.0+ handler: detect racial ability usage and interrupt casts from arena opponents
-        local unit, _, spellID = ...
-        if (not unit or not spellID) then return end
-        for i = 1, 3 do
-            if (unit == "arena" .. i) then
-                local ArenaFrame = self["arena" .. i]
-                -- FindRacial checks for SPELL_CAST_SUCCESS internally
-                ArenaFrame:FindRacial("SPELL_CAST_SUCCESS", spellID)
-                -- FindInterrupt checks for SPELL_CAST_SUCCESS (channel interrupt)
-                ArenaFrame:FindInterrupt("SPELL_CAST_SUCCESS", spellID)
-                return
-            end
-        end
-    elseif (event == "UNIT_SPELLCAST_INTERRUPTED") then
-        if not self.inArena then return end
-        -- 12.0+ handler: detect when arena opponent's cast is interrupted
-        local unit = ...
-        if (not unit) then return end
-        for i = 1, 3 do
-            if (unit == "arena" .. i) then
-                -- We know the unit was interrupted but not by which spell
-                -- The interrupt tracking via UNIT_SPELLCAST_SUCCEEDED above handles
-                -- the case where we or party members use known interrupt spells
-                return
-            end
-        end
-    elseif (event == "UNIT_AURA") then
-        if not self.inArena then return end
-        -- 12.0+ handler: track DR via aura changes on arena units
-        local unit, updateInfo = ...
-        if (not unit) then return end
-        for i = 1, 3 do
-            if (unit == "arena" .. i) then
-                local ArenaFrame = self["arena" .. i]
-                if (updateInfo and ArenaFrame.FindDR) then
-                    -- Track debuff removal/refresh for DR
-                    if (updateInfo.removedAuraInstanceIDs) then
-                        -- Check cached debuffs for DR-tracked spells
-                        if (not ArenaFrame._drAuraCache) then
-                            ArenaFrame._drAuraCache = {}
-                        end
-                        for _, instanceID in ipairs(updateInfo.removedAuraInstanceIDs) do
-                            local cachedSpellID = ArenaFrame._drAuraCache[instanceID]
-                            if (cachedSpellID) then
-                                ArenaFrame._drAuraCache[instanceID] = nil
-                                ArenaFrame:FindDR("SPELL_AURA_REMOVED", cachedSpellID)
-                            end
-                        end
-                    end
-                    if (updateInfo.addedAuras) then
-                        if (not ArenaFrame._drAuraCache) then
-                            ArenaFrame._drAuraCache = {}
-                        end
-                        for _, aura in ipairs(updateInfo.addedAuras) do
-                            if (aura.isHarmful and aura.spellId) then
-                                ArenaFrame._drAuraCache[aura.auraInstanceID] = aura.spellId
-                                ArenaFrame:FindDR("SPELL_AURA_APPLIED", aura.spellId)
-                            end
-                        end
-                    end
-                    if (updateInfo.updatedAuraInstanceIDs) then
-                        if (ArenaFrame._drAuraCache) then
-                            for _, instanceID in ipairs(updateInfo.updatedAuraInstanceIDs) do
-                                local cachedSpellID = ArenaFrame._drAuraCache[instanceID]
-                                if (cachedSpellID) then
-                                    ArenaFrame:FindDR("SPELL_AURA_REFRESH", cachedSpellID)
-                                end
-                            end
-                        end
-                    end
-                end
-                return
-            end
+            self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
         end
     elseif (event == "COMBAT_LOG_EVENT_UNFILTERED") then
         local _, combatEvent, _, sourceGUID, _, _, _, destGUID, _, _, _, spellID, _, _, auraType = CombatLogGetCurrentEventInfo()
-        -- if DLAPI then DLAPI.DebugLog("COMBAT_LOG_EVENT_UNFILTERED", "UNFILTERED" .. " spellID: " .. spellID .. "combatEvent: " ..  combatEvent .. " sourceGUID: " .. sourceGUID .. " destGUID: " .. destGUID .. " auraType: " .. auraType) end
         for i = 1, 3 do
             local ArenaFrame = self["arena" .. i]
             if (sourceGUID == UnitGUID("arena" .. i)) then
@@ -254,7 +120,7 @@ function sArenaMixin:OnEvent(event, ...)
             end
             if (destGUID == UnitGUID("arena" .. i)) then
                 ArenaFrame:FindInterrupt(combatEvent, spellID)
-                if (not isMidnight and auraType == "DEBUFF") then
+                if (auraType == "DEBUFF") then
                     ArenaFrame:FindDR(combatEvent, spellID)
                 end
                 return
@@ -288,9 +154,7 @@ function sArenaMixin:Initialize()
     LibStub("AceConsole-3.0"):RegisterChatCommand("sarena", ChatCommand)
     LibStub("AceConsole-3.0"):RegisterChatCommand("sa", ChatCommand)
 
-    if isMidnight then
-        C_CVar.SetCVar("spellDiminishPVPEnemiesEnabled", "1")
-    end
+    C_CVar.SetCVar("spellDiminishPVPEnemiesEnabled", "1")
 
     self:SetLayout(nil, db.profile.currentLayout)
 end
@@ -305,7 +169,7 @@ function sArenaMixin:layoutReload(layout)
         self.reloadPopup:SetParent(nil)
         self.reloadPopup = nil
     end
-    local template = isMidnight and "BackdropTemplate" or "BasicFrameTemplateWithInset"
+    local template = "BackdropTemplate"
     local frame = CreateFrame("Frame", "ReloadPopup", UIParent, template)
     frame:SetSize(350, 150)
     frame:SetPoint("CENTER", 0, 100)
@@ -449,23 +313,14 @@ function sArenaFrameMixin:OnLoad()
     self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("UNIT_NAME_UPDATE")
-    if not isMidnight then
-        self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-    end
     self:RegisterEvent("ARENA_OPPONENT_UPDATE")
     self:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
     self:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
-    self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
     self:RegisterUnitEvent("UNIT_HEALTH", unit)
     self:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
     self:RegisterUnitEvent("UNIT_POWER_UPDATE", unit)
     self:RegisterUnitEvent("UNIT_MAXPOWER", unit)
     self:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
-    if not isMidnight then
-        self:RegisterUnitEvent("UNIT_AURA", unit)
-        self:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
-        self:RegisterUnitEvent("UNIT_HEAL_ABSORB_AMOUNT_CHANGED", unit)
-    end
 
     self:RegisterForClicks("AnyDown", "AnyUp") -- this is for WOW10, if sArena to support previous versions there would need to be a check to still catch only AnyUp
     self:SetAttribute("*type1", "target")
@@ -475,71 +330,45 @@ function sArenaFrameMixin:OnLoad()
     self:SetAttribute("unit", unit)
     self.unit = unit
 
-    if isMidnight then
-        -- Steal castbar from Blizzard's CompactArenaFrame
-        local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
-        if blizzArenaFrame and blizzArenaFrame.CastingBarFrame then
-            self.CastBar = blizzArenaFrame.CastingBarFrame
-            self.CastBar:SetFrameStrata("HIGH")
-        end
-
-        -- Hook DebuffFrame for CC display on class icon
-        if blizzArenaFrame and blizzArenaFrame.DebuffFrame then
-            local debuffFrame = blizzArenaFrame.DebuffFrame
-            hooksecurefunc(debuffFrame.Icon, "SetTexture", function(_, tex)
-                if tex and tex ~= "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK.BLP" then
-                    self.ClassIcon:SetTexture(tex)
-                else
-                    self:UpdateClassIcon()
-                end
-            end)
-            hooksecurefunc(debuffFrame.Cooldown, "SetCooldown", function(_, start, duration)
-                self.ClassIconCooldown:SetCooldown(start, duration)
-            end)
-        end
-
-        -- Hook CcRemoverFrame for trinket cooldowns
-        if blizzArenaFrame and blizzArenaFrame.CcRemoverFrame then
-            local trinketFrame = blizzArenaFrame.CcRemoverFrame
-            trinketFrame:SetParent(self)
-            trinketFrame:SetAlpha(0)
-            hooksecurefunc(trinketFrame.Cooldown, "SetCooldown", function(_, start, duration)
-                self.Trinket.Cooldown:SetCooldown(start, duration)
-            end)
-        end
-
-        -- Hide heal prediction / absorb elements on Midnight (not available for arena)
-        self.myHealPredictionBar:Hide()
-        self.otherHealPredictionBar:Hide()
-        self.totalAbsorbBar:Hide()
-        self.overAbsorbGlow:Hide()
-        self.overHealAbsorbGlow:Hide()
-        if self.totalAbsorbBarOverlay then self.totalAbsorbBarOverlay:Hide() end
-    else
-        self.CastBar:SetUnit(unit, false, true)
-
-        self.totalAbsorbBar:ClearAllPoints()
-        self.overAbsorbGlow:ClearAllPoints()
-        -- self.healAbsorbBar:ClearAllPoints()
-        self.overHealAbsorbGlow:ClearAllPoints()
-        -- self.healAbsorbBarLeftShadow:ClearAllPoints()
-        -- self.healAbsorbBarRightShadow:ClearAllPoints()
-
-        self.totalAbsorbBar:SetTexture(self.totalAbsorbBar.fillTexture)
-        self.totalAbsorbBar:SetVertexColor(1, 1, 1, 1)
-        self.totalAbsorbBar:SetHeight(self.healthbar:GetHeight())
-
-        self.overAbsorbGlow:SetTexture("Interface\\RaidFrame\\Shield-Overshield")
-        self.overAbsorbGlow:SetBlendMode("ADD")
-
-        self.overAbsorbGlow:SetPoint("TOPLEFT", self.healthbar, "TOPRIGHT", -7, 0)
-        self.overAbsorbGlow:SetPoint("BOTTOMLEFT", self.healthbar, "BOTTOMRIGHT", -7, 0)
-
-        -- self.healAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill", true, true)
-
-        self.overHealAbsorbGlow:SetPoint("BOTTOMRIGHT", self.healthbar, "BOTTOMLEFT", 7, 0)
-        self.overHealAbsorbGlow:SetPoint("TOPRIGHT", self.healthbar, "TOPLEFT", 7, 0)
+    -- Steal castbar from Blizzard's CompactArenaFrame
+    local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
+    if blizzArenaFrame and blizzArenaFrame.CastingBarFrame then
+        self.CastBar = blizzArenaFrame.CastingBarFrame
+        self.CastBar:SetFrameStrata("HIGH")
     end
+
+    -- Hook DebuffFrame for CC display on class icon
+    if blizzArenaFrame and blizzArenaFrame.DebuffFrame then
+        local debuffFrame = blizzArenaFrame.DebuffFrame
+        hooksecurefunc(debuffFrame.Icon, "SetTexture", function(_, tex)
+            if tex and tex ~= "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK.BLP" then
+                self.ClassIcon:SetTexture(tex)
+            else
+                self:UpdateClassIcon()
+            end
+        end)
+        hooksecurefunc(debuffFrame.Cooldown, "SetCooldown", function(_, start, duration)
+            self.ClassIconCooldown:SetCooldown(start, duration)
+        end)
+    end
+
+    -- Hook CcRemoverFrame for trinket cooldowns
+    if blizzArenaFrame and blizzArenaFrame.CcRemoverFrame then
+        local trinketFrame = blizzArenaFrame.CcRemoverFrame
+        trinketFrame:SetParent(self)
+        trinketFrame:SetAlpha(0)
+        hooksecurefunc(trinketFrame.Cooldown, "SetCooldown", function(_, start, duration)
+            self.Trinket.Cooldown:SetCooldown(start, duration)
+        end)
+    end
+
+    -- Hide heal prediction / absorb elements (not available for arena in 12.0)
+    self.myHealPredictionBar:Hide()
+    self.otherHealPredictionBar:Hide()
+    self.totalAbsorbBar:Hide()
+    self.overAbsorbGlow:Hide()
+    self.overHealAbsorbGlow:Hide()
+    if self.totalAbsorbBarOverlay then self.totalAbsorbBarOverlay:Hide() end
 
     self.healthbar = self.HealthBar
     self.myHealPredictionBar:ClearAllPoints()
@@ -552,43 +381,29 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
     local unit = self.unit
 
     if (eventUnit and eventUnit == unit) then
-        if (event == "UNIT_SPELLCAST_SUCCEEDED") then
-            -- if DLAPI then DLAPI.DebugLog("UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_SUCCEEDED" .. " spellID: " .. arg2) end
-            if(arg2 == 336126 or arg2 == 265221 or arg2 == 20594) then
-                self:UpdateTrinketSammers(unit, arg2)
-            end
-        elseif (event == "UNIT_NAME_UPDATE") then
-            self.Name:SetText(GetUnitName(unit))
+        if (event == "UNIT_NAME_UPDATE") then
+            -- Name may be secret; SetText can accept secret values
+            self.Name:SetText(UnitName(unit) or "")
         elseif (event == "ARENA_OPPONENT_UPDATE") then
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
         elseif (event == "ARENA_COOLDOWNS_UPDATE") then
-            -- if DLAPI then DLAPI.DebugLog("ARENA_COOLDOWNS_UPDATE", "ARENA_COOLDOWNS_UPDATE") end
-            -- self:UpdateTrinket()
+            -- handled via combat log
         elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
-            -- arg1 == spellID
-            if (arg1 ~= self.Trinket.spellID) then
+            -- arg1 (spellID) may be secret; guard with issecretvalue
+            if not issecretvalue(arg1) and (arg1 ~= self.Trinket.spellID) then
                 local _, spellTextureNoOverride = GetSpellTexture(arg1)
                 self.Trinket.spellID = arg1
                 self.Trinket.Texture:SetTexture(spellTextureNoOverride)
             end
-        elseif (event == "UNIT_AURA") then
-            self:FindAura()
         elseif (event == "UNIT_HEALTH") then
             self:SetLifeState()
             self:SetStatusText()
-            local currHp = UnitHealth(unit)
-            if (currHp ~= self.currHp) then
-                self.HealthBar:SetValue(currHp)
-                UnitFrameHealPredictionBars_Update_Sarena(self)
-                self:UpdateAbsorb(unit)
-                self.currHp = currHp
-            end
+            -- UnitHealth returns secret for arena units; pass directly to SetValue (accepts secrets)
+            self.HealthBar:SetValue(UnitHealth(unit))
         elseif (event == "UNIT_MAXHEALTH") then
             self.HealthBar:SetMinMaxValues(0, UnitHealthMax(unit))
             self.HealthBar:SetValue(UnitHealth(unit))
-            UnitFrameHealPredictionBars_Update_Sarena(self)
-            self:UpdateAbsorb(unit)
         elseif (event == "UNIT_POWER_UPDATE") then
             self:SetStatusText()
             self.PowerBar:SetValue(UnitPower(unit))
@@ -600,12 +415,6 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
             self:SetPowerType(powerType)
             self.PowerBar:SetMinMaxValues(0, UnitPowerMax(unit))
             self.PowerBar:SetValue(UnitPower(unit))
-        elseif (event == "UNIT_ABSORB_AMOUNT_CHANGED") then
-            UnitFrameHealPredictionBars_Update_Sarena(self)
-            self:UpdateAbsorb(unit)
-        elseif (event == "UNIT_HEAL_ABSORB_AMOUNT_CHANGED") then
-            UnitFrameHealPredictionBars_Update_Sarena(self)
-            self:UpdateAbsorb(unit)
         end
     elseif (event == "PLAYER_LOGIN") then
         self:UnregisterEvent("PLAYER_LOGIN")
@@ -615,7 +424,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
         end
 
         self:Initialize()
-    elseif (event == "PLAYER_ENTERING_WORLD") or (not isMidnight and event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
+    elseif (event == "PLAYER_ENTERING_WORLD") then
         self.Name:SetText("")
         self.CastBar:Hide()
         self.specTexture = nil
@@ -626,9 +435,6 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1, arg2 )
         self:UpdatePlayer()
         self:ResetTrinket()
         self:ResetRacial()
-        if not isMidnight then
-            self:ResetDR()
-        end
         UnitFrameHealPredictionBars_Update_Sarena(self)
         self:UpdateAbsorb(unit)
     elseif (event == "PLAYER_REGEN_ENABLED") then
@@ -642,16 +448,12 @@ function sArenaFrameMixin:Initialize()
     self:SetMysteryPlayer()
     self.parent:SetupDrag(self, self.parent, nil, "UpdateFrameSettings")
     self.parent:SetupDrag(self.CastBar, self.CastBar, "castBar", "UpdateCastBarSettings")
-    if isMidnight then
-        local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
-        if blizzArenaFrame and blizzArenaFrame.SpellDiminishStatusTray then
-            self.drTray = blizzArenaFrame.SpellDiminishStatusTray
-            self.drTray:SetParent(self)
-            self.drTray:EnableMouse(false)
-            self.drTray:SetMouseClickEnabled(false)
-        end
-    else
-        self.parent:SetupDrag(self.Stun, self.Stun, "dr", "UpdateDRSettings")
+    local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
+    if blizzArenaFrame and blizzArenaFrame.SpellDiminishStatusTray then
+        self.drTray = blizzArenaFrame.SpellDiminishStatusTray
+        self.drTray:SetParent(self)
+        self.drTray:EnableMouse(false)
+        self.drTray:SetMouseClickEnabled(false)
     end
     self.parent:SetupDrag(self.SpecIcon, self.SpecIcon, "specIcon", "UpdateSpecIconSettings")
     self.parent:SetupDrag(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
@@ -666,19 +468,11 @@ function sArenaFrameMixin:Initialize()
 end
 
 function sArenaFrameMixin:OnEnter()
-    if not isMidnight then
-        UnitFrame_OnEnter(self)
-    end
-
     self.HealthText:Show()
     self.PowerText:Show()
 end
 
 function sArenaFrameMixin:OnLeave()
-    if not isMidnight then
-        UnitFrame_OnLeave(self)
-    end
-
     self:UpdateStatusTextVisible()
 end
 
@@ -701,11 +495,7 @@ function sArenaFrameMixin:UpdatePlayer(unitEvent)
     local unit = self.unit
 
     self:GetClassAndSpec()
-    if isMidnight then
-        self:UpdateClassIcon()
-    else
-        self:FindAura()
-    end
+    self:UpdateClassIcon()
 
     if ((unitEvent and unitEvent ~= "seen") or not UnitExists(unit)) then
         self:SetMysteryPlayer()
@@ -723,7 +513,8 @@ function sArenaFrameMixin:UpdatePlayer(unitEvent)
 
     self.hideStatusText = false
 
-    self.Name:SetText(GetUnitName(unit))
+    -- UnitName returns secret for arena units; SetText accepts secrets
+    self.Name:SetText(UnitName(unit) or "")
     self.Name:SetShown(db.profile.showNames)
 
     self:UpdateStatusTextVisible()
@@ -765,227 +556,11 @@ end
 
 
 function sArenaFrameMixin:UpdateAbsorb(unit)
-    if isMidnight then return end
-    local hideOverabsorbs = self.parent.db.profile.hideOverabsorbs
-    if hideOverabsorbs then
-        local maxHealth = UnitHealthMax(unit)
-        local currentHealth = UnitHealth(unit)
-        local absorbAmount = UnitGetTotalAbsorbs(unit)
-        local myCurrentHealAbsorb = UnitGetTotalHealAbsorbs(unit) or 0
-        local allIncomingHeal = UnitGetIncomingHeals(unit) or 0
-
-        -- We don't fill outside the health bar with absorbs. Instead, an overAbsorbGlow is shown.
-        local overAbsorb = false
-        if (currentHealth - myCurrentHealAbsorb + allIncomingHeal + absorbAmount >= maxHealth or currentHealth + absorbAmount >= maxHealth) then
-            if (absorbAmount > 0) then
-                overAbsorb = true
-            end
-            if (allIncomingHeal > myCurrentHealAbsorb) then
-                absorbAmount = math.max(0, maxHealth - (currentHealth - myCurrentHealAbsorb + allIncomingHeal))
-            else
-                absorbAmount = math.max(0, maxHealth - currentHealth)
-            end
-        end
-
-        if (overAbsorb) then
-            self.overAbsorbGlow:Show()
-        else
-            self.overAbsorbGlow:Hide()
-        end
-
-        if absorbAmount > 0 then
-            local absorbWidth = self.HealthBar:GetWidth() * (absorbAmount / maxHealth)
-            self.totalAbsorbBar:ClearAllPoints()
-            self.totalAbsorbBar:SetWidth(absorbWidth)
-            self.totalAbsorbBar:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT",
-                self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
-            self.totalAbsorbBar:SetHeight(self.HealthBar:GetHeight())
-            self.totalAbsorbBar:Show()
-            self.totalAbsorbBarOverlay:ClearAllPoints()
-            self.totalAbsorbBarOverlay:SetWidth(absorbWidth)
-            self.totalAbsorbBarOverlay:SetPoint("TOPLEFT", self.HealthBar, "TOPLEFT",
-                self.HealthBar:GetWidth() * (currentHealth / maxHealth), 0)
-            self.totalAbsorbBarOverlay:SetHeight(self.HealthBar:GetHeight())
-            self.totalAbsorbBarOverlay:Show()
-        else
-            self.totalAbsorbBar:Hide()
-            self.totalAbsorbBarOverlay:Hide()
-        end
-    else
-        local healthBar = self.healthbar or self.HealthBar
-        if not healthBar or healthBar:IsForbidden() then return end
-        local absorbBar = self.totalAbsorbBar
-        local absorbOverlay = absorbBar and absorbBar.TiledFillOverlay or self.totalAbsorbBarOverlay
-        local glow = self.overAbsorbGlow
-        if not absorbBar or not absorbOverlay or absorbBar:IsForbidden() or absorbOverlay:IsForbidden() then return end
-        local _, maxHealth = healthBar:GetMinMaxValues()
-        local currentHealth = healthBar:GetValue()
-        if maxHealth <= 0 then return end
-        local totalAbsorb = UnitGetTotalAbsorbs(unit or self.unit) or 0
-        if totalAbsorb > maxHealth then totalAbsorb = maxHealth end
-        local isOverAbsorb = currentHealth + totalAbsorb > maxHealth
-        local healthWidth = healthBar:GetWidth()
-        local healthHeight = healthBar:GetHeight()
-        local absorbWidth = totalAbsorb / maxHealth * healthWidth
-        local missingHealthWidth = (maxHealth - currentHealth) / maxHealth * healthWidth
-        local absorbBarWidth = math.min(absorbWidth, missingHealthWidth)
-        if absorbBarWidth > 0 then
-            absorbBar:ClearAllPoints()
-            absorbBar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", currentHealth / maxHealth * healthWidth, 0)
-            absorbBar:SetWidth(absorbBarWidth)
-            absorbBar:SetHeight(healthHeight)
-            absorbBar:Show()
-        else
-            absorbBar:Hide()
-        end
-        if absorbWidth > 0 then
-            absorbOverlay:SetParent(healthBar)
-            absorbOverlay:ClearAllPoints()
-            if isOverAbsorb then
-                absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-                absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-            else
-                absorbOverlay:SetPoint("TOPRIGHT", absorbBar, "TOPRIGHT", 0, 0)
-                absorbOverlay:SetPoint("BOTTOMRIGHT", absorbBar, "BOTTOMRIGHT", 0, 0)
-            end
-            absorbOverlay:SetWidth(absorbWidth)
-            absorbOverlay:SetHeight(healthHeight)
-            if absorbOverlay.tileSize then
-                absorbOverlay:SetTexCoord(1 - (absorbWidth / absorbOverlay.tileSize), 1, 0, healthHeight / absorbOverlay.tileSize)
-            end
-            absorbOverlay:Show()
-        else
-            absorbOverlay:Hide()
-        end
-        glow:ClearAllPoints()
-        if isOverAbsorb then
-            glow:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", -5, 0)
-            glow:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", -5, 0)
-            glow:SetAlpha(0.6)
-            glow:Show()
-        else
-            glow:Hide()
-        end
-    end
+    -- Absorb data is not available for arena units in 12.0 (secret values)
 end
 
-local MAX_INCOMING_HEAL_OVERFLOW = 1.0;
 function UnitFrameHealPredictionBars_Update_Sarena(frame)
-	if isMidnight then return end
-	if ( not frame.myHealPredictionBar and not frame.otherHealPredictionBar and not frame.healAbsorbBar and not frame.totalAbsorbBar ) then
-		return;
-	end
-
-	local _, maxHealth = frame.healthbar:GetMinMaxValues();
-	local health = frame.healthbar:GetValue();
-	if ( maxHealth <= 0 ) then
-		return;
-	end
-
-	local myIncomingHeal = UnitGetIncomingHeals(frame.unit, "player") or 0;
-	local allIncomingHeal = UnitGetIncomingHeals(frame.unit) or 0;
-	local totalAbsorb = UnitGetTotalAbsorbs(frame.unit) or 0;
-
-	local myCurrentHealAbsorb = 0;
-	if ( frame.healAbsorbBar ) then
-		myCurrentHealAbsorb = UnitGetTotalHealAbsorbs(frame.unit) or 0;
-
-		--We don't fill outside the health bar with healAbsorbs.  Instead, an overHealAbsorbGlow is shown.
-		if ( health < myCurrentHealAbsorb ) then
-			frame.overHealAbsorbGlow:Show();
-			myCurrentHealAbsorb = health;
-		else
-			frame.overHealAbsorbGlow:Hide();
-		end
-	end
-
-	--See how far we're going over the health bar and make sure we don't go too far out of the frame.
-	if ( health - myCurrentHealAbsorb + allIncomingHeal > maxHealth * MAX_INCOMING_HEAL_OVERFLOW ) then
-		allIncomingHeal = maxHealth * MAX_INCOMING_HEAL_OVERFLOW - health + myCurrentHealAbsorb;
-	end
-
-	local otherIncomingHeal = 0;
-
-	--Split up incoming heals.
-	if ( allIncomingHeal >= myIncomingHeal ) then
-		otherIncomingHeal = allIncomingHeal - myIncomingHeal;
-	else
-		myIncomingHeal = allIncomingHeal;
-	end
-
-	--We don't fill outside the the health bar with absorbs.  Instead, an overAbsorbGlow is shown.
-	local overAbsorb = false;
-	if ( health - myCurrentHealAbsorb + allIncomingHeal + totalAbsorb >= maxHealth or health + totalAbsorb >= maxHealth ) then
-		if ( totalAbsorb > 0 ) then
-			overAbsorb = true;
-		end
-
-		if ( allIncomingHeal > myCurrentHealAbsorb ) then
-			totalAbsorb = max(0,maxHealth - (health - myCurrentHealAbsorb + allIncomingHeal));
-		else
-			totalAbsorb = max(0,maxHealth - health);
-		end
-	end
-
-	if ( overAbsorb ) then
-		frame.overAbsorbGlow:Show();
-	else
-		frame.overAbsorbGlow:Hide();
-	end
-
-	local healthTexture = frame.healthbar:GetStatusBarTexture();
-	local myCurrentHealAbsorbPercent = 0;
-	local healAbsorbTexture = nil;
-
-	if ( frame.healAbsorbBar ) then
-		myCurrentHealAbsorbPercent = myCurrentHealAbsorb / maxHealth;
-
-		--If allIncomingHeal is greater than myCurrentHealAbsorb, then the current
-		--heal absorb will be completely overlayed by the incoming heals so we don't show it.
-		if ( myCurrentHealAbsorb > allIncomingHeal ) then
-			local shownHealAbsorb = myCurrentHealAbsorb - allIncomingHeal;
-			local shownHealAbsorbPercent = shownHealAbsorb / maxHealth;
-
-			healAbsorbTexture = frame.healAbsorbBar:UpdateFillPosition(healthTexture, shownHealAbsorb, -shownHealAbsorbPercent);
-
-			--If there are incoming heals the left shadow would be overlayed by the incoming heals
-			--so it isn't shown.
-			-- frame.healAbsorbBar.LeftShadow:SetShown(allIncomingHeal <= 0);
-
-			-- The right shadow is only shown if there are absorbs on the health bar.
-			-- frame.healAbsorbBar.RightShadow:SetShown(totalAbsorb > 0)
-		else
-			frame.healAbsorbBar:Hide();
-		end
-	end
-
-	--Show myIncomingHeal on the health bar.
-	local incomingHealTexture;
-	if ( frame.myHealPredictionBar ) then
-		incomingHealTexture = frame.myHealPredictionBar:UpdateFillPosition(healthTexture, myIncomingHeal, -myCurrentHealAbsorbPercent);
-	end
-
-	local otherHealLeftTexture = (myIncomingHeal > 0) and incomingHealTexture or healthTexture;
-	local xOffset = (myIncomingHeal > 0) and 0 or -myCurrentHealAbsorbPercent;
-
-	--Append otherIncomingHeal on the health bar
-	if ( frame.otherHealPredictionBar ) then
-		incomingHealTexture = frame.otherHealPredictionBar:UpdateFillPosition(otherHealLeftTexture, otherIncomingHeal, xOffset);
-	end
-
-	--Append absorbs to the correct section of the health bar.
-	local appendTexture = nil;
-	if ( healAbsorbTexture ) then
-		--If there is a healAbsorb part shown, append the absorb to the end of that.
-		appendTexture = healAbsorbTexture;
-	else
-		--Otherwise, append the absorb to the end of the the incomingHeals or health part;
-		appendTexture = incomingHealTexture or healthTexture;
-	end
-
-	if ( frame.totalAbsorbBar ) then
-		frame.totalAbsorbBar:UpdateFillPosition(appendTexture, totalAbsorb);
-	end
+    -- Heal prediction data is not available for arena units in 12.0 (secret values)
 end
 
 function sArenaFrameMixin:GetClassAndSpec()
@@ -1183,57 +758,7 @@ function sArenaFrameMixin:SetPowerType(powerType)
 end
 
 function sArenaFrameMixin:FindAura()
-    if isMidnight then
-        self:UpdateClassIcon()
-        return
-    end
-
-    local unit = self.unit
-    local currentSpellID, currentDuration, currentExpirationTime, currentTexture = nil, 0, 0, nil
-
-    if (self.currentInterruptSpellID) then
-        currentSpellID = self.currentInterruptSpellID
-        currentDuration = self.currentInterruptDuration
-        currentExpirationTime = self.currentInterruptExpirationTime
-        currentTexture = self.currentInterruptTexture
-    end
-
-    for i = 1, 2 do
-        local filter = (i == 1 and "HELPFUL" or "HARMFUL")
-
-        for n = 1, 30 do
-            local auraData = UnitAura(unit, n, filter)
-            if auraData then
-                local spellID = auraData.spellId
-                local duration = auraData.duration
-                local expirationTime = auraData.expirationTime
-                local texture = auraData.icon
-            if ( not spellID ) then break end
-
-            if (auraList[spellID]) then
-                if (not currentSpellID or auraList[spellID] < auraList[currentSpellID]) then
-                    currentSpellID = spellID
-                    currentDuration = duration
-                    currentExpirationTime = expirationTime
-                    currentTexture = texture
-                end
-            end
-        end
-    end
-end
-
-    if (currentSpellID) then
-        self.currentAuraSpellID = currentSpellID
-        self.currentAuraStartTime = currentExpirationTime - currentDuration
-        self.currentAuraDuration = currentDuration
-        self.currentAuraTexture = currentTexture
-    else
-        self.currentAuraSpellID = nil
-        self.currentAuraStartTime = 0
-        self.currentAuraDuration = 0
-        self.currentAuraTexture = nil
-    end
-
+    -- Aura data is secret for arena units in 12.0; CC display is handled via Blizzard frame hooks
     self:UpdateClassIcon()
 end
 
@@ -1264,11 +789,11 @@ end
 
 function sArenaFrameMixin:SetLifeState()
     local unit = self.unit
-    local isDead = UnitIsDeadOrGhost(unit) and (isMidnight or not FindAuraByName(FEIGN_DEATH, unit, "HELPFUL"))
+    local isDead = UnitIsDeadOrGhost(unit)
 
     self.DeathIcon:SetShown(isDead)
     self.hideStatusText = isDead
-    if (isDead and not isMidnight) then
+    if isDead then
         self:ResetDR()
     end
 end
@@ -1284,23 +809,10 @@ function sArenaFrameMixin:SetStatusText(unit)
         unit = self.unit
     end
 
-    local hp = UnitHealth(unit)
-    local hpMax = UnitHealthMax(unit)
-    local pp = UnitPower(unit)
-    local ppMax = UnitPowerMax(unit)
-
-    if (db.profile.statusText.usePercentage) then
-        if isMidnight then
-            self.HealthText:SetFormattedText("%0.f%%", UnitHealthPercent(unit, nil, CurveConstants.ScaleTo100))
-            self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
-        else
-            self.HealthText:SetText(ceil((hp / hpMax) * 100) .. "%")
-            self.PowerText:SetText(ceil((pp / ppMax) * 100) .. "%")
-        end
-    else
-        self.HealthText:SetText(AbbreviateLargeNumbers(hp))
-        self.PowerText:SetText(AbbreviateLargeNumbers(pp))
-    end
+    -- In 12.0, health/power values are secret for arena units
+    -- Use UnitHealthPercent/UnitPowerPercent which work with secret values
+    self.HealthText:SetFormattedText("%0.f%%", UnitHealthPercent(unit, nil, CurveConstants.ScaleTo100))
+    self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
 end
 
 function sArenaFrameMixin:UpdateStatusTextVisible()
@@ -1356,22 +868,6 @@ function sArenaMixin:Test()
             frame.HealthBar:SetStatusBarColor(0, 1, 0, 1)
         end
         frame.PowerBar:SetStatusBarColor(0, 0, 1, 1)
-
-        if not isMidnight then
-            for n = 1, #self.drCategories do
-                local drFrame = frame[self.drCategories[n]]
-
-                drFrame.Icon:SetTexture(136071)
-                drFrame:Show()
-                drFrame.Cooldown:SetCooldown(currTime, n == 1 and 60 or math.random(20, 50))
-
-                if (n == 1) then
-                    drFrame.Border:SetVertexColor(1, 0, 0, 1)
-                else
-                    drFrame.Border:SetVertexColor(0, 1, 0, 1)
-                end
-            end
-        end
 
         frame.CastBar.fadeOut = nil
         frame.CastBar:Show()
