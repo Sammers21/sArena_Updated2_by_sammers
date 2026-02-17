@@ -1,4 +1,4 @@
-## Interface: 120001, 120000, 110205
+## Interface: 120001, 120000
 ## Title: sArena Updated 2 by sammers
 ## Notes: Enhanced arena frames
 ## Author: Sammers (fork of sArena by Stako/Bodify)

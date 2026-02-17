@@ -441,7 +441,7 @@ function sArenaFrameMixin:Initialize()
     self.parent:SetupDrag(self.SpecIcon, self.SpecIcon, "specIcon", "UpdateSpecIconSettings")
     self.parent:SetupDrag(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
     self.parent:SetupDrag(self.Racial, self.Racial, "racial", "UpdateRacialSettings")
-    if not self.totalAbsorbBar then
+    if self.totalAbsorbBar then
         self.totalAbsorbBar:SetTexture("Interface\\RaidFrame\\Shield-Fill")
         self.totalAbsorbBar:SetVertexColor(1, 1, 1, 1)
         self.totalAbsorbBarOverlay:SetTexture("Interface\\RaidFrame\\Shield-Overlay", true, true)
@@ -640,7 +640,7 @@ end
 function sArenaFrameMixin:UpdateTrinket()
     local spellID, startTime, duration = C_PvP.GetArenaCrowdControlInfo(self.unit)
     local trinket = self.Trinket
-    if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellID .. " startTime: " .. startTime .. " duration: " .. duration) end
+    -- if DLAPI then DLAPI.DebugLog("UpdateTrinket", "UpdateTrinket spellID: " .. spellID .. " startTime: " .. startTime .. " duration: " .. duration) end
     if (spellID) then
         if (spellID ~= trinket.spellID) then
             local _, spellTextureNoOverride = GetSpellTexture(spellID)
