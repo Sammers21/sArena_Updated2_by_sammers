@@ -314,6 +314,34 @@ function sArenaMixin:GetLayoutOptionsTable(layoutName)
             get = function(info) return info.handler.db.profile.layoutSettings[layoutName].dr[info[#info]] end,
             set = function(info, val) self:UpdateDRSettings(info.handler.db.profile.layoutSettings[layoutName].dr, info, val) end,
             args = {
+                classicIconsHeader = {
+                    order = 0.1,
+                    name = exclamation .. " |cff00ff00Want to replace current DR icons with old-style ones?|r  Use the |cffffd100DR Icon Changer|r app:",
+                    type = "description",
+                    fontSize = "medium",
+                    width = "full",
+                },
+                classicIconsUrl = {
+                    order = 0.2,
+                    name = "Download link (click to select, then Ctrl+C to copy)",
+                    type = "input",
+                    width = "double",
+                    get = function() return "https://github.com/Sammers21/dr-icon-changer/releases/latest" end,
+                    set = function() end,
+                    dialogControl = "EditBox",
+                },
+                classicIconsSteps = {
+                    order = 0.3,
+                    name = "\n  1. Download and install the |cffffd100.msi|r from the link above\n" ..
+                        "     (SmartScreen warning: click |cffffd100More info|r -> |cffffd100Run anyway|r)\n" ..
+                        "  2. Launch the app, select your WoW folder and version\n" ..
+                        "  3. Pick icons for each DR category (Stun, Incap, Fear, Root, etc.)\n" ..
+                        "  4. |cffff0000Fully restart WoW|r (/reload is NOT enough)\n\n" ..
+                        "  No game files are modified. Icons go into Interface/ICONS in your WoW folder.",
+                    type = "description",
+                    fontSize = "medium",
+                    width = "full",
+                },
                 positioning = {
                     order = 1,
                     name = "Positioning",
