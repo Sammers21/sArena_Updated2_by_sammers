@@ -31,6 +31,7 @@ layout.defaultSettings = {
         posY = -14,
         scale = 1,
         width = 90,
+        castbarLayout = 1,
     },
     dr = {
         posX = -79,
@@ -85,7 +86,6 @@ function layout:Initialize(frame)
         frame.parent:UpdateFrameSettings(self.db)
         frame.parent:UpdateSpecIconSettings(self.db.specIcon)
         frame.parent:UpdateTrinketSettings(self.db.trinket)
-        frame.parent:UpdateRacialSettings(self.db.racial)
     end
 
     frame.ClassIconCooldown:SetSwipeTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
@@ -95,7 +95,6 @@ function layout:Initialize(frame)
     frame.SpecIcon:SetSize(14, 14)
     frame.SpecIcon.Texture:AddMaskTexture(frame.SpecIcon.Mask)
     frame.Trinket:SetSize(25, 25)
-    frame.Racial:SetSize(25, 25)
 
     local hp = frame.HealthBar
     hp:SetSize(87, 23)
@@ -152,6 +151,7 @@ function layout:Initialize(frame)
     local id = frame:GetID()
     layout["frameTexture" .. id] = frame.TexturePool:Acquire()
     local frameTexture = layout["frameTexture" .. id]
+    frameTexture:SetParent(frame.Overlay)
     frameTexture:SetDrawLayer("ARTWORK", 2)
     frameTexture:SetSize(160, 80)
     frameTexture:SetAtlas("UnitFrame")

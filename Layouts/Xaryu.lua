@@ -30,6 +30,7 @@ layout.defaultSettings = {
         posY = -27,
         scale = 1.25,
         width = 98,
+        castbarLayout = 1,
     },
     dr = {
         posX = -95,
@@ -147,7 +148,6 @@ function layout:Initialize(frame)
         frame.parent:UpdateFrameSettings(self.db)
         frame.parent:UpdateSpecIconSettings(self.db.specIcon)
         frame.parent:UpdateTrinketSettings(self.db.trinket)
-        frame.parent:UpdateRacialSettings(self.db.racial)
     end
 
     self:UpdateOrientation(frame)
@@ -155,7 +155,6 @@ function layout:Initialize(frame)
     frame:SetSize(self.db.width, self.db.height)
     frame.SpecIcon:SetSize(18, 18)
     frame.Trinket:SetSize(44, 44)
-    frame.Racial:SetSize(44, 44)
 
     frame.PowerBar:SetHeight(self.db.powerBarHeight)
 

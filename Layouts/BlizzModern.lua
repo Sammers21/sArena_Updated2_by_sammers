@@ -31,6 +31,7 @@ layout.defaultSettings = {
         posY = -6,
         scale = 1,
         width = 120,
+        castbarLayout = 1,
     },
     dr = {
         posX = -112,
@@ -85,7 +86,6 @@ function layout:Initialize(frame)
         frame.parent:UpdateFrameSettings(self.db)
         frame.parent:UpdateSpecIconSettings(self.db.specIcon)
         frame.parent:UpdateTrinketSettings(self.db.trinket)
-        frame.parent:UpdateRacialSettings(self.db.racial)
     end
 
     frame:SetSize(195, 67)
@@ -135,19 +135,6 @@ function layout:Initialize(frame)
     trinketBorder:SetDrawLayer("ARTWORK", 3)
     trinketBorder:Show()
 
-    -- racial
-    local racial = frame.Racial
-    local racialBorder = frame.TexturePool:Acquire()
-    racial.Texture:SetMask("Interface\\masks\\circlemaskscalable")
-    racial.Cooldown:SetSwipeTexture("Interface\\masks\\circlemaskscalable")
-    racial.Cooldown:SetUseCircularEdge(true)
-    racial:SetSize(25, 25)    
-    racialBorder:SetParent(racial)
-    racialBorder:SetAtlas("UI-HUD-UnitFrame-Target-PortraitOn-Boss-IconRing")
-    racialBorder:SetPoint("TOPLEFT", racial, "TOPLEFT", -4, 4)
-    racialBorder:SetPoint("BOTTOMRIGHT", racial, "BOTTOMRIGHT", 4, -4)
-    racialBorder:SetDrawLayer("ARTWORK", 3)
-    racialBorder:Show()
 
     -- spec icon
     local specBorder = frame.TexturePool:Acquire()
@@ -216,6 +203,7 @@ function layout:Initialize(frame)
     local id = frame:GetID()
     layout["frameTexture" .. id] = frame.TexturePool:Acquire()
     local frameTexture = layout["frameTexture" .. id]
+    frameTexture:SetParent(frame.Overlay)
     frameTexture:SetDrawLayer("ARTWORK", 3)
     frameTexture:SetAllPoints(frame)
     frameTexture:SetAtlas("UI-HUD-UnitFrame-Target-PortraitOn")

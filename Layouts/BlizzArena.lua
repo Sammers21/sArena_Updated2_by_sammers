@@ -31,6 +31,7 @@ layout.defaultSettings = {
         posY = 0,
         scale = 1,
         width = 84,
+        castbarLayout = 1,
     },
     dr = {
         posX = -74,
@@ -85,7 +86,6 @@ function layout:Initialize(frame)
         frame.parent:UpdateFrameSettings(self.db)
         frame.parent:UpdateSpecIconSettings(self.db.specIcon)
         frame.parent:UpdateTrinketSettings(self.db.trinket)
-        frame.parent:UpdateRacialSettings(self.db.racial)
     end
 
     frame.ClassIconCooldown:SetSwipeTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
@@ -95,7 +95,6 @@ function layout:Initialize(frame)
     frame.SpecIcon:SetSize(14, 14)
     frame.SpecIcon.Texture:AddMaskTexture(frame.SpecIcon.Mask)
     frame.Trinket:SetSize(22, 22)
-    frame.Racial:SetSize(22, 22)
 
     local healthBar = frame.HealthBar
     healthBar:SetSize(69, 7)
@@ -156,6 +155,7 @@ function layout:Initialize(frame)
     local id = frame:GetID()
     layout["frameTexture" .. id] = frame.TexturePool:Acquire()
     local frameTexture = layout["frameTexture" .. id]
+    frameTexture:SetParent(frame.Overlay)
     frameTexture:SetDrawLayer("ARTWORK", 2)
     frameTexture:SetAllPoints(frame)
     frameTexture:SetTexture("Interface\\ArenaEnemyFrame\\UI-ArenaTargetingFrame")

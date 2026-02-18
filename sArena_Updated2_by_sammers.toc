@@ -9,4 +9,32 @@
 ## IconTexture: Interface\ICONS\Achievement_arena_2v2_7
 ## SavedVariables: sArena3DB
 
-sArena.xml
+# Libraries
+Ace3\LibStub\LibStub.lua
+Ace3\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Ace3\AceDB-3.0\AceDB-3.0.xml
+Ace3\AceDBOptions-3.0\AceDBOptions-3.0.xml
+Ace3\AceConsole-3.0\AceConsole-3.0.xml
+Ace3\AceGUI-3.0\AceGUI-3.0.xml
+Ace3\AceConfig-3.0\AceConfig-3.0.xml
+
+# Core
+sArena.lua
+Config.lua
+Data.lua
+
+# Layouts
+Layouts\BlizzArena.lua
+Layouts\BlizzTourney.lua
+Layouts\BlizzTarget.lua
+Layouts\Xaryu.lua
+Layouts\BlizzModern.lua
+
+# Events, hooks, and Blizzard frame stealing
+Events.lua
+
+# Test mode
+TestMode.lua
+
+# Frame creation (must be last - depends on mixins above)
+Frames.lua
