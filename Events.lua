@@ -169,27 +169,147 @@ function sArenaMixin:OnEvent(event, ...)
     end
 end
 
+-- Apply sArena visual customizations to a single Blizzard DR tray item.
+-- Called lazily when the frame is first used (Blizzard creates pool frames on demand).
+local function initializeSArenaDRFrame(drFrame)
+    if drFrame._isSArenaTracked then return end
+    drFrame._isSArenaTracked = true
+
+    drFrame:EnableMouse(false)
+    drFrame:SetMouseClickEnabled(false)
+
+    -- Create overlay frame at high level so border renders above Blizzard textures
+    drFrame.Boverlay = CreateFrame("Frame", nil, drFrame)
+    drFrame.Boverlay:SetAllPoints(drFrame)
+    drFrame.Boverlay:SetFrameStrata("MEDIUM")
+    drFrame.Boverlay:SetFrameLevel(26)
+    drFrame.Boverlay:Show()
+
+    -- Create border on the overlay for severity coloring (green/red)
+    drFrame.Border = drFrame.Boverlay:CreateTexture(nil, "OVERLAY", nil, 6)
+    drFrame.Border:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+    drFrame.Border:SetAllPoints(drFrame)
+    drFrame.Border:SetVertexColor(0, 1, 0, 1)
+    drFrame.Border:Show()
+
+    -- Create immune border (red) - parented to ImmunityIndicator, ignores parent alpha
+    if drFrame.ImmunityIndicator then
+        drFrame.ImmunityIndicator:SetFrameStrata("MEDIUM")
+        drFrame.ImmunityIndicator:SetFrameLevel(27)
+
+        drFrame.BorderImmune = drFrame:CreateTexture(nil, "OVERLAY", nil, 7)
+        drFrame.BorderImmune:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+        drFrame.BorderImmune:SetAllPoints(drFrame)
+        drFrame.BorderImmune:SetVertexColor(1, 0, 0, 1)
+        drFrame.BorderImmune:SetParent(drFrame.ImmunityIndicator)
+        drFrame.BorderImmune:SetIgnoreParentAlpha(true)
+
+        -- Keep Blizzard shield hidden - hook SetAlpha to prevent Blizzard from restoring it
+        drFrame.ImmunityIndicator:SetAlpha(0)
+        local forcingAlpha = false
+        hooksecurefunc(drFrame.ImmunityIndicator, "SetAlpha", function(imm, alpha)
+            if not forcingAlpha and alpha ~= 0 then
+                forcingAlpha = true
+                imm:SetAlpha(0)
+                forcingAlpha = false
+            end
+        end)
+    end
+
+    -- Create DR severity text overlay (½, %)
+    drFrame.DRTextFrame = CreateFrame("Frame", nil, drFrame)
+    drFrame.DRTextFrame:SetAllPoints(drFrame)
+    drFrame.DRTextFrame:SetFrameStrata("HIGH")
+    drFrame.DRTextFrame:SetFrameLevel(30)
+
+    drFrame.DRText = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    drFrame.DRText:SetPoint("BOTTOMRIGHT", 4, -4)
+    drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
+    drFrame.DRText:SetTextColor(0, 1, 0, 1)
+    drFrame.DRText:SetText("½")
+
+    -- Immune-state text (parented to ImmunityIndicator so it shows when immune)
+    if drFrame.ImmunityIndicator then
+        drFrame.DRText2 = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        drFrame.DRText2:SetPoint("BOTTOMRIGHT", 4, -4)
+        drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
+        drFrame.DRText2:SetTextColor(1, 0, 0, 1)
+        drFrame.DRText2:SetText("%")
+        drFrame.DRText2:SetParent(drFrame.ImmunityIndicator)
+        drFrame.DRText2:SetIgnoreParentAlpha(true)
+
+        -- Hook SetShown to toggle between normal border and immune border.
+        -- Color/text is handled by the global UpdateState hook.
+        hooksecurefunc(drFrame.ImmunityIndicator, "SetShown", function(_, shown)
+            if shown then
+                drFrame.Border:SetAlpha(0)
+                drFrame.DRText:SetAlpha(0)
+            else
+                drFrame.Border:SetAlpha(1)
+                drFrame.DRText:SetAlpha(1)
+            end
+        end)
+    end
+
+    -- Cooldown cosmetic settings
+    if drFrame.Cooldown then
+        drFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.6)
+        drFrame.Cooldown:SetDrawBling(false)
+        drFrame.Cooldown:SetHideCountdownNumbers(false)
+    end
+
+    -- Reset stack tracking when DR frame hides (DR timer expired / pool release)
+    drFrame:HookScript("OnHide", function()
+        drFrame._drStack = nil
+        drFrame.Border:SetAlpha(1)
+        drFrame.Border:SetVertexColor(0, 1, 0, 1)
+        drFrame.DRText:SetAlpha(1)
+        drFrame.DRText:SetText("½")
+        drFrame.DRText:SetTextColor(0, 1, 0, 1)
+    end)
+end
+
 function sArenaMixin:InitializeDRFrames()
-    -- Hook UpdateState globally for reliable DR stack tracking.
-    -- Blizzard calls UpdateState on each UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED event,
-    -- which fires for every DR application. The old SetCooldown hook failed because
-    -- Blizzard can pass the same startTime for subsequent DR increments.
+    -- Hook UpdateState globally for lazy DR frame initialization and stack tracking.
+    -- Blizzard's SpellDiminishStatusTray creates frames from a pool on demand (in arena).
+    -- GetChildren() returns nothing at init time, so we intercept UpdateState to catch
+    -- each frame the first time it's used and apply our customizations then.
     if not sArenaMixin._drUpdateStateHooked and SpellDiminishStatusTrayItemMixin then
+        local addonSelf = self
         local sevText = { "½", "¼", "%" }
-        hooksecurefunc(SpellDiminishStatusTrayItemMixin, "UpdateState", function(self, state)
-            if not self._isSArenaTracked then return end
+        hooksecurefunc(SpellDiminishStatusTrayItemMixin, "UpdateState", function(drFrame, state)
+            local tray = drFrame:GetParent()
+            if not tray or not tray._isSArenaTray then return end
+
+            -- Lazy-initialize: apply our visuals the first time this pool frame is used
+            if not drFrame._isSArenaTracked then
+                initializeSArenaDRFrame(drFrame)
+                local arenaFrame = tray:GetParent()
+                if arenaFrame and arenaFrame.drFrames then
+                    table.insert(arenaFrame.drFrames, drFrame)
+                end
+                -- Apply current layout settings to this newly initialized frame
+                if addonSelf.db then
+                    local layoutName = addonSelf.db.profile.currentLayout
+                    local layoutSettings = addonSelf.db.profile.layoutSettings[layoutName]
+                    if layoutSettings and layoutSettings.dr then
+                        addonSelf:UpdateDRSettings(layoutSettings.dr)
+                    end
+                end
+            end
+
+            -- DR stack tracking
             if state.isImmune then return end
-            -- Each non-immune UpdateState call = one DR application
-            self._drStack = math.min((self._drStack or 0) + 1, 3)
-            local stack = self._drStack
+            drFrame._drStack = math.min((drFrame._drStack or 0) + 1, 3)
+            local stack = drFrame._drStack
             local color = sArenaMixin.severityColor[stack]
             if color then
-                if self.Border then
-                    self.Border:SetVertexColor(unpack(color))
+                if drFrame.Border then
+                    drFrame.Border:SetVertexColor(unpack(color))
                 end
-                if self.DRText then
-                    self.DRText:SetTextColor(unpack(color))
-                    self.DRText:SetText(sevText[stack] or "½")
+                if drFrame.DRText then
+                    drFrame.DRText:SetTextColor(unpack(color))
+                    drFrame.DRText:SetText(sevText[stack] or "½")
                 end
             end
         end)
@@ -200,106 +320,19 @@ function sArenaMixin:InitializeDRFrames()
         local frame = self["arena" .. i]
         if not frame.drTray then break end
 
-        local drChildren = { frame.drTray:GetChildren() }
-        frame.drFrames = drChildren
-
+        frame.drTray._isSArenaTray = true
         frame.drTray:SetFrameStrata("HIGH")
         frame.drTray:SetFrameLevel(10)
+        if not frame.drFrames then
+            frame.drFrames = {}
+        end
 
-        for _, drFrame in ipairs(drChildren) do
-            drFrame._isSArenaTracked = true
-            drFrame:EnableMouse(false)
-            drFrame:SetMouseClickEnabled(false)
-
-            -- Create overlay frame at high level so border renders above Blizzard textures
-            drFrame.Boverlay = CreateFrame("Frame", nil, drFrame)
-            drFrame.Boverlay:SetAllPoints(drFrame)
-            drFrame.Boverlay:SetFrameStrata("MEDIUM")
-            drFrame.Boverlay:SetFrameLevel(26)
-            drFrame.Boverlay:Show()
-
-            -- Create border on the overlay for severity coloring (green/yellow/red)
-            drFrame.Border = drFrame.Boverlay:CreateTexture(nil, "OVERLAY", nil, 6)
-            drFrame.Border:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-            drFrame.Border:SetAllPoints(drFrame)
-            drFrame.Border:SetVertexColor(0, 1, 0, 1)
-            drFrame.Border:Show()
-
-            -- Create immune border (red) - parented to ImmunityIndicator, ignores parent alpha
-            if drFrame.ImmunityIndicator then
-                drFrame.ImmunityIndicator:SetFrameStrata("MEDIUM")
-                drFrame.ImmunityIndicator:SetFrameLevel(27)
-
-                drFrame.BorderImmune = drFrame:CreateTexture(nil, "OVERLAY", nil, 7)
-                drFrame.BorderImmune:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-                drFrame.BorderImmune:SetAllPoints(drFrame)
-                drFrame.BorderImmune:SetVertexColor(1, 0, 0, 1)
-                drFrame.BorderImmune:SetParent(drFrame.ImmunityIndicator)
-                drFrame.BorderImmune:SetIgnoreParentAlpha(true)
-
-                -- Keep Blizzard shield hidden - hook SetAlpha to prevent Blizzard from restoring it
-                drFrame.ImmunityIndicator:SetAlpha(0)
-                local forcingAlpha = false
-                hooksecurefunc(drFrame.ImmunityIndicator, "SetAlpha", function(self, alpha)
-                    if not forcingAlpha and alpha ~= 0 then
-                        forcingAlpha = true
-                        self:SetAlpha(0)
-                        forcingAlpha = false
-                    end
-                end)
+        -- Initialize any existing children (e.g. from EditMode preview)
+        for _, drFrame in ipairs({ frame.drTray:GetChildren() }) do
+            if not drFrame._isSArenaTracked then
+                initializeSArenaDRFrame(drFrame)
+                table.insert(frame.drFrames, drFrame)
             end
-
-            -- Create DR severity text overlay (½, ¼, %)
-            drFrame.DRTextFrame = CreateFrame("Frame", nil, drFrame)
-            drFrame.DRTextFrame:SetAllPoints(drFrame)
-            drFrame.DRTextFrame:SetFrameStrata("MEDIUM")
-            drFrame.DRTextFrame:SetFrameLevel(28)
-
-            drFrame.DRText = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-            drFrame.DRText:SetPoint("BOTTOMRIGHT", 4, -4)
-            drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
-            drFrame.DRText:SetTextColor(0, 1, 0, 1)
-            drFrame.DRText:SetText("½")
-
-            -- Immune-state text (parented to ImmunityIndicator so it shows when immune)
-            if drFrame.ImmunityIndicator then
-                drFrame.DRText2 = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-                drFrame.DRText2:SetPoint("BOTTOMRIGHT", 4, -4)
-                drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
-                drFrame.DRText2:SetTextColor(1, 0, 0, 1)
-                drFrame.DRText2:SetText("%")
-                drFrame.DRText2:SetParent(drFrame.ImmunityIndicator)
-                drFrame.DRText2:SetIgnoreParentAlpha(true)
-
-                -- Hook SetShown to toggle between normal border and immune border.
-                -- Color/text is handled by the global UpdateState hook above.
-                hooksecurefunc(drFrame.ImmunityIndicator, "SetShown", function(_, shown)
-                    if shown then
-                        drFrame.Border:SetAlpha(0)
-                        drFrame.DRText:SetAlpha(0)
-                    else
-                        drFrame.Border:SetAlpha(1)
-                        drFrame.DRText:SetAlpha(1)
-                    end
-                end)
-            end
-
-            -- Cooldown cosmetic settings
-            if drFrame.Cooldown then
-                drFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.6)
-                drFrame.Cooldown:SetDrawBling(false)
-                drFrame.Cooldown:SetHideCountdownNumbers(false)
-            end
-
-            -- Reset stack tracking when DR frame hides (DR timer expired)
-            drFrame:HookScript("OnHide", function()
-                drFrame._drStack = nil
-                drFrame.Border:SetAlpha(1)
-                drFrame.Border:SetVertexColor(0, 1, 0, 1)
-                drFrame.DRText:SetAlpha(1)
-                drFrame.DRText:SetText("½")
-                drFrame.DRText:SetTextColor(0, 1, 0, 1)
-            end)
         end
     end
 
@@ -503,7 +536,9 @@ function sArenaFrameMixin:Initialize()
         self.drTray:SetParent(self)
         self.drTray:EnableMouse(false)
         self.drTray:SetMouseClickEnabled(false)
+        self.drTray._isSArenaTray = true
     end
+    self.drFrames = {}
     self.parent:SetupDrag(self.SpecIcon, self.SpecIcon, "specIcon", "UpdateSpecIconSettings")
     self.parent:SetupDrag(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
 end

@@ -47,23 +47,28 @@ function sArenaMixin:Test()
         frame.PowerBar:SetStatusBarColor(0, 0, 1, 1)
 
         frame.CastBar.fadeOut = nil
+        frame.CastBar:SetMinMaxValues(0, 100)
+        frame.CastBar:SetValue(70)
         frame.CastBar:Show()
         frame.CastBar:SetAlpha(1)
         frame.CastBar.Icon:SetTexture(136071)
+        frame.CastBar.Icon:Show()
         frame.CastBar:SetStatusBarColor(1, 0.7, 0, 1)
         if frame.CastBar.Text then
             frame.CastBar.Text:SetFontObject("GameFontHighlightSmall")
             frame.CastBar.Text:SetText("Polymorph")
         end
 
-        -- Show fake DR icons for test mode
+        -- Show fake DR icons for test mode (Midnight: 2-stack DR system)
         if not frame.fakeDRFrames then
             frame.fakeDRFrames = {}
-            local drTextures = { 132298, 136071, 136183, 136100 } -- Stun, Incap, Disorient, Root
+            local drTextures = { 132298, 136071 } -- Stun, Incap
             local layoutName = db.profile.currentLayout
             local layoutSettings = db.profile.layoutSettings[layoutName]
             local drSize = (layoutSettings and layoutSettings.dr and layoutSettings.dr.size) or 22
-            for n = 1, 4 do
+            local borderColors = { { 0, 1, 0, 1 }, { 1, 0, 0, 1 } } -- green (½), red (%)
+            local drTexts = { "½", "%" }
+            for n = 1, 2 do
                 local fakeDR = CreateFrame("Frame", nil, frame)
                 fakeDR:SetSize(drSize, drSize)
                 fakeDR:SetFrameStrata("HIGH")
@@ -81,11 +86,8 @@ function sArenaMixin:Test()
                 fakeDR.Border:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
                 fakeDR.Border:SetPoint("TOPLEFT", -2.5, 2.5)
                 fakeDR.Border:SetPoint("BOTTOMRIGHT", 2.5, -2.5)
-                local borderColors = { { 0, 1, 0, 1 }, { 1, 1, 0, 1 }, { 1, 0, 0, 1 }, { 0, 1, 0, 1 } }
-                local borderColor = borderColors[n]
-                fakeDR.Border:SetVertexColor(unpack(borderColor))
+                fakeDR.Border:SetVertexColor(unpack(borderColors[n]))
 
-                -- DR severity text (½, ¼, %)
                 fakeDR.DRTextFrame = CreateFrame("Frame", nil, fakeDR)
                 fakeDR.DRTextFrame:SetAllPoints(fakeDR)
                 fakeDR.DRTextFrame:SetFrameStrata("HIGH")
@@ -93,14 +95,13 @@ function sArenaMixin:Test()
                 fakeDR.DRText = fakeDR.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
                 fakeDR.DRText:SetPoint("BOTTOMRIGHT", 4, -4)
                 fakeDR.DRText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
-                local drTexts = { "½", "¼", "%", "½" }
                 fakeDR.DRText:SetText(drTexts[n])
-                fakeDR.DRText:SetTextColor(unpack(borderColor))
+                fakeDR.DRText:SetTextColor(unpack(borderColors[n]))
 
                 frame.fakeDRFrames[n] = fakeDR
             end
         end
-        for n = 1, 4 do
+        for n = 1, 2 do
             frame.fakeDRFrames[n]:Show()
             frame.fakeDRFrames[n].Cooldown:SetCooldown(currTime, math.random(12, 25))
         end

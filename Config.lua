@@ -361,8 +361,15 @@ function sArenaMixin:GetLayoutOptionsTable(layoutName)
                         },
                     },
                 },
-                sizing = {
+                showDRText = {
                     order = 2,
+                    name = "Show DR Text (½, %)",
+                    desc = "Show severity text on DR icons",
+                    type = "toggle",
+                    width = "full",
+                },
+                sizing = {
+                    order = 3,
                     name = "Sizing",
                     type = "group",
                     inline = true,
@@ -467,6 +474,7 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
             -- Modern: thin bar with rounded mask, spell name below
             castBar:SetHeight(9)
             castBar.sArenaBackground:Hide()
+            if castBar.Background then castBar.Background:Show() end
             if castBar.TextBorder then
                 castBar.TextBorder:SetAlpha(1)
                 castBar.TextBorder:ClearAllPoints()
@@ -484,10 +492,14 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
                 castBar.Text:SetPoint("BOTTOM", castBar, "BOTTOM", 0, -14)
             end
             castBar.Icon:SetSize(20, 20)
+            castBar.Icon:ClearAllPoints()
+            castBar.Icon:SetPoint("RIGHT", castBar, "LEFT", -5, -4.5)
+            castBar.Icon:SetDrawLayer("OVERLAY", 7)
         else
             -- Old/Classic: thick flat bar, black background, spell name centered
             castBar:SetHeight(16)
             castBar.sArenaBackground:Show()
+            if castBar.Background then castBar.Background:Hide() end
             if castBar.TextBorder then
                 castBar.TextBorder:SetAlpha(0)
             end
@@ -502,12 +514,16 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
                 castBar.Text:SetPoint("CENTER", castBar, "CENTER", 0, 0)
             end
             castBar.Icon:SetSize(16, 16)
+            castBar.Icon:ClearAllPoints()
+            castBar.Icon:SetPoint("RIGHT", castBar, "LEFT", -5, 0)
+            castBar.Icon:SetTexCoord(0, 1, 0, 1)
+            castBar.Icon:SetDrawLayer("OVERLAY", 7)
         end
     end
 end
 
 function sArenaMixin:UpdateDRSettings(db, info, val)
-    if info and val then
+    if info and val ~= nil then
         db[info[#info]] = val
     end
 
@@ -584,6 +600,13 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
                 if drFrame.DRText2 then
                     drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
                 end
+
+                if drFrame.DRTextFrame then
+                    drFrame.DRTextFrame:SetShown(db.showDRText == true)
+                end
+                if drFrame.DRText2 then
+                    drFrame.DRText2:SetShown(db.showDRText == true)
+                end
             end
         end
 
@@ -622,6 +645,10 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
 
                 if fakeDR.DRText then
                     fakeDR.DRText:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
+                end
+
+                if fakeDR.DRTextFrame then
+                    fakeDR.DRTextFrame:SetShown(db.showDRText == true)
                 end
             end
         end

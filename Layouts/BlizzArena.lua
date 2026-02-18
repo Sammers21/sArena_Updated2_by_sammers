@@ -31,7 +31,7 @@ layout.defaultSettings = {
         posY = 0,
         scale = 1,
         width = 84,
-        castbarLayout = 1,
+        castbarLayout = 2,
     },
     dr = {
         posX = -74,
@@ -41,11 +41,11 @@ layout.defaultSettings = {
         fontSize = 12,
         spacing = 6,
         growthDirection = 4,
+        showDRText = false,
     },
 
     -- custom layout settings
     mirrored = false,
-    classicBars = true,
 }
 
 local function getSetting(info)
