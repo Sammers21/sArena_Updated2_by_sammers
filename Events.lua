@@ -37,10 +37,47 @@ function sArenaMixin:OnLoad()
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 
+local function ShowReloadPopup()
+    if _G["CompactArenaFrameMember1"] then return end
+
+    local f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    f:SetSize(420, 160)
+    f:SetPoint("CENTER")
+    f:SetFrameStrata("DIALOG")
+    f:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        tile = true, tileSize = 32, edgeSize = 32,
+        insets = { left = 8, right = 8, top = 8, bottom = 8 },
+    })
+
+    local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", 0, -20)
+    title:SetText("|cffff8000sArena|r")
+
+    local text = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    text:SetPoint("TOP", title, "BOTTOM", 0, -12)
+    text:SetWidth(360)
+    text:SetText("A UI reload is required so sArena can connect to Blizzard's arena frames.\n\nFeatures like castbars, CC tracking, and trinkets won't work without it.")
+
+    local btn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    btn:SetSize(140, 28)
+    btn:SetPoint("BOTTOM", 0, 18)
+    btn:SetText("Reload UI")
+    btn:SetScript("OnClick", ReloadUI)
+
+    f:EnableMouse(true)
+    f:SetMovable(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+end
+
 function sArenaMixin:OnEvent(event, ...)
     if (event == "PLAYER_LOGIN") then
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
+        ShowReloadPopup()
     elseif (event == "PLAYER_ENTERING_WORLD") then
         local _, instanceType = IsInInstance()
         UpdateBlizzVisibility(instanceType)
@@ -189,6 +226,7 @@ function sArenaFrameMixin:OnLoad()
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("UNIT_NAME_UPDATE")
     self:RegisterEvent("ARENA_OPPONENT_UPDATE")
+    self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
     self:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
     self:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
     self:RegisterUnitEvent("UNIT_HEALTH", unit)
@@ -219,27 +257,18 @@ function sArenaFrameMixin:OnLoad()
         end)
     end
 
-    -- Hook DebuffFrame for CC display on class icon
-    if blizzArenaFrame and blizzArenaFrame.DebuffFrame then
-        local debuffFrame = blizzArenaFrame.DebuffFrame
-        local QUESTION_MARK_ICON = 134400
-        local QUESTION_MARK_PATH = "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK.BLP"
-
+    -- Hook DebuffFrame for CC display on class icon (mirrors sArena_Reloaded approach)
+    local debuffFrame = blizzArenaFrame and blizzArenaFrame.DebuffFrame
+    if debuffFrame then
         hooksecurefunc(debuffFrame.Icon, "SetTexture", function(_, tex)
-            if tex and tex ~= QUESTION_MARK_PATH and tex ~= QUESTION_MARK_ICON then
-                self.ClassIcon:SetTexture(tex)
-            else
-                self.ClassIconCooldown:Clear()
+            if tex == "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK.BLP" then
                 self:UpdateClassIcon()
+            else
+                self.ClassIcon:SetTexture(tex)
             end
         end)
         hooksecurefunc(debuffFrame.Cooldown, "SetCooldown", function(_, start, duration)
-            if start and start > 0 and duration and duration > 0 then
-                self.ClassIconCooldown:SetCooldown(start, duration)
-            else
-                self.ClassIconCooldown:Clear()
-                self:UpdateClassIcon()
-            end
+            self.ClassIconCooldown:SetCooldown(start, duration)
         end)
         hooksecurefunc(debuffFrame.Cooldown, "Clear", function()
             self.ClassIconCooldown:Clear()
@@ -308,7 +337,7 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
         end
 
         self:Initialize()
-    elseif (event == "PLAYER_ENTERING_WORLD") then
+    elseif (event == "PLAYER_ENTERING_WORLD") or (event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
         self.Name:SetText("")
         self.CastBar:Hide()
         self.specTexture = nil
