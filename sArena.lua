@@ -11,7 +11,6 @@ sArenaMixin.defaultSettings = {
         currentLayout = "BlizzArena",
         classColors = true,
         showNames = true,
-        hideOverabsorbs = false,
         statusText = {
             usePercentage = false,
             alwaysShow = true,
@@ -405,7 +404,8 @@ local actionColors = {
 }
 
 function sArenaCastingBarExtensionMixin:GetTypeInfo(barType)
-    barType = barType or "standard";
-    self:SetStatusBarColor(unpack(actionColors[barType]));
+    barType = barType or "standard"
+    local colors = actionColors[barType] or actionColors.standard
+    self:SetStatusBarColor(unpack(colors))
     return self.typeInfo
 end

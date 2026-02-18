@@ -45,6 +45,7 @@ layout.defaultSettings = {
 
     -- custom layout settings
     mirrored = false,
+    classicBars = true,
 }
 
 local function getSetting(info)

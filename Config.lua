@@ -244,7 +244,7 @@ function sArenaMixin:GetLayoutOptionsTable(layoutName)
                     order = 0,
                     name = "Castbar Style",
                     type = "select",
-                    width = "full",
+                    width = "normal",
                     values = { "Modern", "Old" },
                 },
                 positioning = {
@@ -462,15 +462,10 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
             castBar.sArenaBackground:Hide()
         end
 
-        -- Save original height on first call
-        if not castBar._originalHeight then
-            castBar._originalHeight = castBar:GetHeight()
-        end
-
-        -- Apply castbar style
+        -- Apply castbar style (matches sArena_Reloaded Midnight approach)
         if isModern then
-            -- Modern: thin bar, spell name below via Blizzard's TextBorder
-            castBar:SetHeight(castBar._originalHeight or 10)
+            -- Modern: thin bar with rounded mask, spell name below
+            castBar:SetHeight(9)
             castBar.sArenaBackground:Hide()
             if castBar.TextBorder then
                 castBar.TextBorder:SetAlpha(1)
@@ -488,13 +483,13 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
                 castBar.Text:ClearAllPoints()
                 castBar.Text:SetPoint("BOTTOM", castBar, "BOTTOM", 0, -14)
             end
+            castBar.Icon:SetSize(20, 20)
         else
-            -- Old/Classic: thick bar, background, spell name centered inside
+            -- Old/Classic: thick flat bar, black background, spell name centered
             castBar:SetHeight(16)
             castBar.sArenaBackground:Show()
             if castBar.TextBorder then
                 castBar.TextBorder:SetAlpha(0)
-                castBar.TextBorder:ClearAllPoints()
             end
             if castBar.Border then
                 castBar.Border:SetAlpha(0)
@@ -504,10 +499,9 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
             end
             if castBar.Text then
                 castBar.Text:ClearAllPoints()
-                castBar.Text:SetPoint("TOPLEFT", castBar, "TOPLEFT", 2, 0)
-                castBar.Text:SetPoint("BOTTOMRIGHT", castBar, "BOTTOMRIGHT", -2, 0)
-                castBar.Text:SetWordWrap(false)
+                castBar.Text:SetPoint("CENTER", castBar, "CENTER", 0, 0)
             end
+            castBar.Icon:SetSize(16, 16)
         end
     end
 end
@@ -774,19 +768,6 @@ sArenaMixin.optionsTable = {
                                     type = "toggle",
                                     get = function(info) return info.handler.db.profile.showNames end,
                                     set = function(info, val) info.handler.db.profile.showNames = val for i = 1, 3 do info.handler["arena"..i].Name:SetShown(val) end end,
-                                },
-                                hideOverabsorbs = {
-                                    order = 3,
-                                    name = "Hide Overabsorbs",
-                                    desc = "Hide the glow effect when absorb shields exceed max health",
-                                    type = "toggle",
-                                    get = function(info) return info.handler.db.profile.hideOverabsorbs end,
-                                    set = function(info, val)
-                                        info.handler.db.profile.hideOverabsorbs = val
-                                        for i = 1, 3 do
-                                            info.handler["arena"..i]:UpdateAbsorb(info.handler["arena"..i].unit)
-                                        end
-                                    end,
                                 },
                             },
                         },

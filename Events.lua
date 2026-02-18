@@ -38,16 +38,28 @@ function sArenaMixin:OnLoad()
 end
 
 local reloadWarningFrame
+local beenInArena = false
+
+local function EnsureArenaFramesEnabled()
+    local accountSettings = EditModeManagerFrame and EditModeManagerFrame.AccountSettings
+    if not accountSettings then return end
+
+    local arenaFramesEnabled = EditModeManagerFrame:GetAccountSettingValueBool(Enum.EditModeAccountSetting.ShowArenaFrames)
+    if not arenaFramesEnabled then
+        EditModeManagerFrame:OnAccountSettingChanged(Enum.EditModeAccountSetting.ShowArenaFrames, true)
+        accountSettings:RefreshArenaFrames()
+    end
+end
 
 local function ShowReloadWarning()
-    if _G["CompactArenaFrameMember1"] then return end
+    if sArenaSkipReloadWarning then return end
     if reloadWarningFrame then
         reloadWarningFrame:Show()
         return
     end
 
     local f = CreateFrame("Frame", "sArenaReloadWarning", UIParent, "BackdropTemplate")
-    f:SetSize(400, 180)
+    f:SetSize(400, 220)
     f:SetPoint("CENTER", UIParent, "CENTER", 0, 150)
     f:SetFrameStrata("DIALOG")
     f:EnableMouse(true)
@@ -86,14 +98,17 @@ local function ShowReloadWarning()
     body:SetPoint("TOP", title, "BOTTOM", 0, -10)
     body:SetWidth(360)
     body:SetJustifyH("CENTER")
-    body:SetText("sArena needs a UI reload to hook into\nBlizzard's arena frames.\n\n|cff888899Castbars, CC tracking, trinkets, and DR\nwon't work without it.|r")
+    body:SetText("Edit Mode causes the DR frames to error\nafter the first arena game.\n\n|cff888899Reload UI to fix.|r")
 
     -- Reload UI button
     local btn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     btn:SetSize(140, 28)
     btn:SetPoint("BOTTOM", 0, 28)
     btn:SetText("Reload UI")
-    btn:SetScript("OnClick", ReloadUI)
+    btn:SetScript("OnClick", function()
+        EnsureArenaFramesEnabled()
+        ReloadUI()
+    end)
 
     -- Subtle dismiss text
     local dismissText = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -125,14 +140,25 @@ function sArenaMixin:OnEvent(event, ...)
     if (event == "PLAYER_LOGIN") then
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
-        ShowReloadWarning()
+
+        -- If logging in outside arena, mark beenInArena after 3s so the
+        -- very first arena entry will show the warning. If logging in
+        -- inside arena (reconnect), leave it false so this arena works.
+        local _, loginInstanceType = IsInInstance()
+        if loginInstanceType ~= "arena" then
+            C_Timer.After(3, function() beenInArena = true end)
+        end
     elseif (event == "PLAYER_ENTERING_WORLD") then
         local _, instanceType = IsInInstance()
         UpdateBlizzVisibility(instanceType)
         self:SetMouseState(true)
         if (instanceType == "arena") then
             self.inArena = true
-            ShowReloadWarning()
+            if beenInArena then
+                ShowReloadWarning()
+            else
+                beenInArena = true
+            end
         else
             self.inArena = false
         end
@@ -144,6 +170,32 @@ function sArenaMixin:OnEvent(event, ...)
 end
 
 function sArenaMixin:InitializeDRFrames()
+    -- Hook UpdateState globally for reliable DR stack tracking.
+    -- Blizzard calls UpdateState on each UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED event,
+    -- which fires for every DR application. The old SetCooldown hook failed because
+    -- Blizzard can pass the same startTime for subsequent DR increments.
+    if not sArenaMixin._drUpdateStateHooked and SpellDiminishStatusTrayItemMixin then
+        local sevText = { "½", "¼", "%" }
+        hooksecurefunc(SpellDiminishStatusTrayItemMixin, "UpdateState", function(self, state)
+            if not self._isSArenaTracked then return end
+            if state.isImmune then return end
+            -- Each non-immune UpdateState call = one DR application
+            self._drStack = math.min((self._drStack or 0) + 1, 3)
+            local stack = self._drStack
+            local color = sArenaMixin.severityColor[stack]
+            if color then
+                if self.Border then
+                    self.Border:SetVertexColor(unpack(color))
+                end
+                if self.DRText then
+                    self.DRText:SetTextColor(unpack(color))
+                    self.DRText:SetText(sevText[stack] or "½")
+                end
+            end
+        end)
+        sArenaMixin._drUpdateStateHooked = true
+    end
+
     for i = 1, 3 do
         local frame = self["arena" .. i]
         if not frame.drTray then break end
@@ -154,9 +206,8 @@ function sArenaMixin:InitializeDRFrames()
         frame.drTray:SetFrameStrata("HIGH")
         frame.drTray:SetFrameLevel(10)
 
-        local severityText = { "½", "¼", "%" }
-
         for _, drFrame in ipairs(drChildren) do
+            drFrame._isSArenaTracked = true
             drFrame:EnableMouse(false)
             drFrame:SetMouseClickEnabled(false)
 
@@ -220,58 +271,29 @@ function sArenaMixin:InitializeDRFrames()
                 drFrame.DRText2:SetParent(drFrame.ImmunityIndicator)
                 drFrame.DRText2:SetIgnoreParentAlpha(true)
 
-                -- Hook SetShown to toggle between normal border and immune border
+                -- Hook SetShown to toggle between normal border and immune border.
+                -- Color/text is handled by the global UpdateState hook above.
                 hooksecurefunc(drFrame.ImmunityIndicator, "SetShown", function(_, shown)
                     if shown then
-                        -- Hide normal border/text, immune border/text show via ImmunityIndicator parent
                         drFrame.Border:SetAlpha(0)
                         drFrame.DRText:SetAlpha(0)
                     else
-                        -- Restore normal border/text with stack-based color
                         drFrame.Border:SetAlpha(1)
                         drFrame.DRText:SetAlpha(1)
-                        local stack = drFrame._drStack or 1
-                        local color = sArenaMixin.severityColor[math.min(stack, 3)]
-                        if color then
-                            drFrame.Border:SetVertexColor(unpack(color))
-                            drFrame.DRText:SetTextColor(unpack(color))
-                        end
-                        drFrame.DRText:SetText(severityText[math.min(stack, 3)] or "½")
                     end
                 end)
             end
 
-            -- Track DR stacks via cooldown changes for green/yellow/red severity
+            -- Cooldown cosmetic settings
             if drFrame.Cooldown then
-                hooksecurefunc(drFrame.Cooldown, "SetCooldown", function(_, start, duration)
-                    if start and start > 0 and duration and duration > 0 then
-                        if not drFrame._lastDRStart or start ~= drFrame._lastDRStart then
-                            if drFrame._lastDRStart then
-                                drFrame._drStack = math.min((drFrame._drStack or 1) + 1, 3)
-                            else
-                                drFrame._drStack = 1
-                            end
-                            drFrame._lastDRStart = start
-                        end
-                        local stack = drFrame._drStack or 1
-                        local color = sArenaMixin.severityColor[stack]
-                        if color then
-                            drFrame.Border:SetVertexColor(unpack(color))
-                            drFrame.DRText:SetTextColor(unpack(color))
-                        end
-                        drFrame.DRText:SetText(severityText[stack] or "½")
-                    end
-                end)
-
                 drFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.6)
                 drFrame.Cooldown:SetDrawBling(false)
                 drFrame.Cooldown:SetHideCountdownNumbers(false)
             end
 
-            -- Reset stack tracking when DR frame hides
+            -- Reset stack tracking when DR frame hides (DR timer expired)
             drFrame:HookScript("OnHide", function()
                 drFrame._drStack = nil
-                drFrame._lastDRStart = nil
                 drFrame.Border:SetAlpha(1)
                 drFrame.Border:SetVertexColor(0, 1, 0, 1)
                 drFrame.DRText:SetAlpha(1)
@@ -365,6 +387,8 @@ function sArenaFrameMixin:OnLoad()
         self.CastBar = blizzArenaFrame.CastingBarFrame
         self.CastBar:SetParent(self)
         self.CastBar:SetFrameStrata("HIGH")
+        -- Override Blizzard's GetTypeInfo so we control colors and textures
+        Mixin(self.CastBar, sArenaCastingBarExtensionMixin)
         -- Reapply layout texture after Blizzard resets it on cast events
         self.CastBar:HookScript("OnEvent", function(castBar)
             if castBar.typeInfo then

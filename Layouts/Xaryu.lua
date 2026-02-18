@@ -47,7 +47,7 @@ layout.defaultSettings = {
     height = 44,
     powerBarHeight = 9,
     mirrored = true,
-    classicBars = false,
+    classicBars = true,
 }
 
 local function getSetting(info)
