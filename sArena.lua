@@ -267,10 +267,10 @@ function sArenaFrameMixin:GetClassAndSpec()
     end
 end
 
-function sArenaFrameMixin:UpdateClassIcon()
+function sArenaFrameMixin:UpdateClassIcon(force)
     local texture = self.class and sArenaMixin.classIcons[self.class] or 134400
 
-    if self.currentClassIconTexture == texture then return end
+    if self.currentClassIconTexture == texture and not force then return end
 
     self.currentClassIconTexture = texture
     self.ClassIcon:SetTexture(texture)

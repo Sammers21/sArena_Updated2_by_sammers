@@ -576,6 +576,10 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
                         end
                     end
                 end
+
+                if drFrame.DRText then
+                    drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
+                end
             end
         end
 
@@ -610,6 +614,10 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
                             break
                         end
                     end
+                end
+
+                if fakeDR.DRText then
+                    fakeDR.DRText:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
                 end
             end
         end

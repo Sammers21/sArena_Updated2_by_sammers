@@ -84,6 +84,19 @@ function sArenaMixin:Test()
                 local borderColors = { { 0, 1, 0, 1 }, { 1, 1, 0, 1 }, { 1, 0, 0, 1 }, { 0, 1, 0, 1 } }
                 local borderColor = borderColors[n]
                 fakeDR.Border:SetVertexColor(unpack(borderColor))
+
+                -- DR severity text (½, ¼, %)
+                fakeDR.DRTextFrame = CreateFrame("Frame", nil, fakeDR)
+                fakeDR.DRTextFrame:SetAllPoints(fakeDR)
+                fakeDR.DRTextFrame:SetFrameStrata("HIGH")
+                fakeDR.DRTextFrame:SetFrameLevel(27)
+                fakeDR.DRText = fakeDR.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+                fakeDR.DRText:SetPoint("BOTTOMRIGHT", 4, -4)
+                fakeDR.DRText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
+                local drTexts = { "½", "¼", "%", "½" }
+                fakeDR.DRText:SetText(drTexts[n])
+                fakeDR.DRText:SetTextColor(unpack(borderColor))
+
                 frame.fakeDRFrames[n] = fakeDR
             end
         end

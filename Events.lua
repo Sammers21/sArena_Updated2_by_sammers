@@ -105,30 +105,89 @@ function sArenaMixin:InitializeDRFrames()
         frame.drTray:SetFrameStrata("HIGH")
         frame.drTray:SetFrameLevel(10)
 
+        local severityText = { "½", "¼", "%" }
+
         for _, drFrame in ipairs(drChildren) do
             drFrame:EnableMouse(false)
             drFrame:SetMouseClickEnabled(false)
 
-            -- Create border overlay for severity coloring (green/yellow/red)
-            drFrame.Border = drFrame:CreateTexture(nil, "OVERLAY")
+            -- Create overlay frame at high level so border renders above Blizzard textures
+            drFrame.Boverlay = CreateFrame("Frame", nil, drFrame)
+            drFrame.Boverlay:SetAllPoints(drFrame)
+            drFrame.Boverlay:SetFrameStrata("MEDIUM")
+            drFrame.Boverlay:SetFrameLevel(26)
+            drFrame.Boverlay:Show()
+
+            -- Create border on the overlay for severity coloring (green/yellow/red)
+            drFrame.Border = drFrame.Boverlay:CreateTexture(nil, "OVERLAY", nil, 6)
             drFrame.Border:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+            drFrame.Border:SetAllPoints(drFrame)
             drFrame.Border:SetVertexColor(0, 1, 0, 1)
+            drFrame.Border:Show()
 
-            -- Hide Blizzard's immunity visual
+            -- Create immune border (red) - parented to ImmunityIndicator, ignores parent alpha
             if drFrame.ImmunityIndicator then
-                drFrame.ImmunityIndicator:SetAlpha(0)
+                drFrame.ImmunityIndicator:SetFrameStrata("MEDIUM")
+                drFrame.ImmunityIndicator:SetFrameLevel(27)
 
-                -- Hook SetShown for immune state
+                drFrame.BorderImmune = drFrame:CreateTexture(nil, "OVERLAY", nil, 7)
+                drFrame.BorderImmune:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+                drFrame.BorderImmune:SetAllPoints(drFrame)
+                drFrame.BorderImmune:SetVertexColor(1, 0, 0, 1)
+                drFrame.BorderImmune:SetParent(drFrame.ImmunityIndicator)
+                drFrame.BorderImmune:SetIgnoreParentAlpha(true)
+
+                -- Keep Blizzard shield hidden - hook SetAlpha to prevent Blizzard from restoring it
+                drFrame.ImmunityIndicator:SetAlpha(0)
+                local forcingAlpha = false
+                hooksecurefunc(drFrame.ImmunityIndicator, "SetAlpha", function(self, alpha)
+                    if not forcingAlpha and alpha ~= 0 then
+                        forcingAlpha = true
+                        self:SetAlpha(0)
+                        forcingAlpha = false
+                    end
+                end)
+            end
+
+            -- Create DR severity text overlay (½, ¼, %)
+            drFrame.DRTextFrame = CreateFrame("Frame", nil, drFrame)
+            drFrame.DRTextFrame:SetAllPoints(drFrame)
+            drFrame.DRTextFrame:SetFrameStrata("MEDIUM")
+            drFrame.DRTextFrame:SetFrameLevel(28)
+
+            drFrame.DRText = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+            drFrame.DRText:SetPoint("BOTTOMRIGHT", 4, -4)
+            drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
+            drFrame.DRText:SetTextColor(0, 1, 0, 1)
+            drFrame.DRText:SetText("½")
+
+            -- Immune-state text (parented to ImmunityIndicator so it shows when immune)
+            if drFrame.ImmunityIndicator then
+                drFrame.DRText2 = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+                drFrame.DRText2:SetPoint("BOTTOMRIGHT", 4, -4)
+                drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
+                drFrame.DRText2:SetTextColor(1, 0, 0, 1)
+                drFrame.DRText2:SetText("%")
+                drFrame.DRText2:SetParent(drFrame.ImmunityIndicator)
+                drFrame.DRText2:SetIgnoreParentAlpha(true)
+
+                -- Hook SetShown to toggle between normal border and immune border
                 hooksecurefunc(drFrame.ImmunityIndicator, "SetShown", function(_, shown)
                     if shown then
-                        drFrame.Border:SetVertexColor(1, 0, 0, 1) -- red = immune
+                        -- Hide normal border/text, immune border/text show via ImmunityIndicator parent
+                        drFrame.Border:SetAlpha(0)
+                        drFrame.DRText:SetAlpha(0)
                     else
-                        -- Restore stack-based color
+                        -- Restore normal border/text with stack-based color
+                        drFrame.Border:SetAlpha(1)
+                        drFrame.DRText:SetAlpha(1)
                         local stack = drFrame._drStack or 1
                         local color = sArenaMixin.severityColor[math.min(stack, 3)]
                         if color then
                             drFrame.Border:SetVertexColor(unpack(color))
+                            drFrame.DRText:SetTextColor(unpack(color))
                         end
+                        drFrame.DRText:SetText(severityText[math.min(stack, 3)] or "½")
                     end
                 end)
             end
@@ -145,10 +204,13 @@ function sArenaMixin:InitializeDRFrames()
                             end
                             drFrame._lastDRStart = start
                         end
-                        local color = sArenaMixin.severityColor[drFrame._drStack or 1]
+                        local stack = drFrame._drStack or 1
+                        local color = sArenaMixin.severityColor[stack]
                         if color then
                             drFrame.Border:SetVertexColor(unpack(color))
+                            drFrame.DRText:SetTextColor(unpack(color))
                         end
+                        drFrame.DRText:SetText(severityText[stack] or "½")
                     end
                 end)
 
@@ -161,6 +223,11 @@ function sArenaMixin:InitializeDRFrames()
             drFrame:HookScript("OnHide", function()
                 drFrame._drStack = nil
                 drFrame._lastDRStart = nil
+                drFrame.Border:SetAlpha(1)
+                drFrame.Border:SetVertexColor(0, 1, 0, 1)
+                drFrame.DRText:SetAlpha(1)
+                drFrame.DRText:SetText("½")
+                drFrame.DRText:SetTextColor(0, 1, 0, 1)
             end)
         end
     end
@@ -262,7 +329,7 @@ function sArenaFrameMixin:OnLoad()
     if debuffFrame then
         hooksecurefunc(debuffFrame.Icon, "SetTexture", function(_, tex)
             if tex == "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK.BLP" then
-                self:UpdateClassIcon()
+                self:UpdateClassIcon(true)
             else
                 self.ClassIcon:SetTexture(tex)
             end
@@ -272,11 +339,11 @@ function sArenaFrameMixin:OnLoad()
         end)
         hooksecurefunc(debuffFrame.Cooldown, "Clear", function()
             self.ClassIconCooldown:Clear()
-            self:UpdateClassIcon()
+            self:UpdateClassIcon(true)
         end)
         debuffFrame:HookScript("OnHide", function()
             self.ClassIconCooldown:Clear()
-            self:UpdateClassIcon()
+            self:UpdateClassIcon(true)
         end)
     end
 
