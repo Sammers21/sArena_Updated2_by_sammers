@@ -565,6 +565,12 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
                     drFrame.Border:SetPoint("BOTTOMRIGHT", drFrame, "BOTTOMRIGHT", (db.borderSize or 2.5), -(db.borderSize or 2.5))
                 end
 
+                if drFrame.BorderImmune then
+                    drFrame.BorderImmune:ClearAllPoints()
+                    drFrame.BorderImmune:SetPoint("TOPLEFT", drFrame, "TOPLEFT", -(db.borderSize or 2.5), (db.borderSize or 2.5))
+                    drFrame.BorderImmune:SetPoint("BOTTOMRIGHT", drFrame, "BOTTOMRIGHT", (db.borderSize or 2.5), -(db.borderSize or 2.5))
+                end
+
                 if drFrame.Cooldown then
                     for _, region in next, { drFrame.Cooldown:GetRegions() } do
                         if region:GetObjectType() == "FontString" then
@@ -579,6 +585,10 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
 
                 if drFrame.DRText then
                     drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
+                end
+
+                if drFrame.DRText2 then
+                    drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
                 end
             end
         end

@@ -37,53 +37,102 @@ function sArenaMixin:OnLoad()
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 
-local function ShowReloadPopup()
+local reloadWarningFrame
+
+local function ShowReloadWarning()
     if _G["CompactArenaFrameMember1"] then return end
+    if reloadWarningFrame then
+        reloadWarningFrame:Show()
+        return
+    end
 
-    local f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-    f:SetSize(420, 160)
-    f:SetPoint("CENTER")
+    local f = CreateFrame("Frame", "sArenaReloadWarning", UIParent, "BackdropTemplate")
+    f:SetSize(400, 180)
+    f:SetPoint("CENTER", UIParent, "CENTER", 0, 150)
     f:SetFrameStrata("DIALOG")
+    f:EnableMouse(true)
+
+    -- Dark backdrop with teal-tinted border
     f:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 8, right = 8, top = 8, bottom = 8 },
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
     })
+    f:SetBackdropColor(0.05, 0.05, 0.09, 0.95)
+    f:SetBackdropBorderColor(0.22, 0.75, 0.82, 0.5)
 
+    -- Top accent stripe
+    local stripe = f:CreateTexture(nil, "ARTWORK")
+    stripe:SetTexture("Interface\\Buttons\\WHITE8x8")
+    stripe:SetPoint("TOPLEFT", 1, -1)
+    stripe:SetPoint("TOPRIGHT", -1, -1)
+    stripe:SetHeight(2)
+    stripe:SetVertexColor(0.2, 0.82, 0.9, 1)
+
+    -- Warning icon
+    local icon = f:CreateTexture(nil, "OVERLAY")
+    icon:SetTexture("Interface\\DialogFrame\\DialogAlertIcon")
+    icon:SetSize(36, 36)
+    icon:SetPoint("TOP", 0, -14)
+
+    -- Title
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", 0, -20)
-    title:SetText("|cffff8000sArena|r")
+    title:SetPoint("TOP", icon, "BOTTOM", 0, -6)
+    title:SetText("|cff40d0e0Reload Required|r")
 
-    local text = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    text:SetPoint("TOP", title, "BOTTOM", 0, -12)
-    text:SetWidth(360)
-    text:SetText("A UI reload is required so sArena can connect to Blizzard's arena frames.\n\nFeatures like castbars, CC tracking, and trinkets won't work without it.")
+    -- Body text
+    local body = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    body:SetPoint("TOP", title, "BOTTOM", 0, -10)
+    body:SetWidth(360)
+    body:SetJustifyH("CENTER")
+    body:SetText("sArena needs a UI reload to hook into\nBlizzard's arena frames.\n\n|cff888899Castbars, CC tracking, trinkets, and DR\nwon't work without it.|r")
 
+    -- Reload UI button
     local btn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     btn:SetSize(140, 28)
-    btn:SetPoint("BOTTOM", 0, 18)
+    btn:SetPoint("BOTTOM", 0, 28)
     btn:SetText("Reload UI")
     btn:SetScript("OnClick", ReloadUI)
 
-    f:EnableMouse(true)
-    f:SetMovable(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    -- Subtle dismiss text
+    local dismissText = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    dismissText:SetPoint("TOP", btn, "BOTTOM", 0, -3)
+    dismissText:SetText("|cff555566dismiss|r")
+
+    local dismissBtn = CreateFrame("Button", nil, f)
+    dismissBtn:SetPoint("TOPLEFT", dismissText, "TOPLEFT", -6, 2)
+    dismissBtn:SetPoint("BOTTOMRIGHT", dismissText, "BOTTOMRIGHT", 6, -2)
+    dismissBtn:SetScript("OnClick", function() f:Hide() end)
+    dismissBtn:SetScript("OnEnter", function() dismissText:SetText("|cff8899aadismiss|r") end)
+    dismissBtn:SetScript("OnLeave", function() dismissText:SetText("|cff555566dismiss|r") end)
+
+    -- Fade-in animation
+    f:SetAlpha(0)
+    local ag = f:CreateAnimationGroup()
+    local anim = ag:CreateAnimation("Alpha")
+    anim:SetFromAlpha(0)
+    anim:SetToAlpha(1)
+    anim:SetDuration(0.4)
+    anim:SetSmoothing("OUT")
+    ag:SetScript("OnFinished", function() f:SetAlpha(1) end)
+    ag:Play()
+
+    reloadWarningFrame = f
 end
 
 function sArenaMixin:OnEvent(event, ...)
     if (event == "PLAYER_LOGIN") then
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
-        ShowReloadPopup()
+        ShowReloadWarning()
     elseif (event == "PLAYER_ENTERING_WORLD") then
         local _, instanceType = IsInInstance()
         UpdateBlizzVisibility(instanceType)
         self:SetMouseState(true)
         if (instanceType == "arena") then
             self.inArena = true
+            ShowReloadWarning()
         else
             self.inArena = false
         end
