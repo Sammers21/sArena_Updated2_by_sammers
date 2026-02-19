@@ -20,7 +20,6 @@ sArenaMixin.classIcons = {
 -- DR severity border colors
 -- Used by InitializeDRFrames() for border color on stolen Blizzard DR tray
 sArenaMixin.severityColor = {
-    [1] = { 0, 1, 0, 1},    -- green (first application)
-    [2] = { 1, 1, 0, 1},    -- yellow (half duration)
-    [3] = { 1, 0, 0, 1},    -- red (immune)
+    [1] = { 0, 1, 0, 1},    -- green (½ — next will be immune)
+    [2] = { 1, 0, 0, 1},    -- red (% — immune next)
 }

@@ -497,7 +497,7 @@ function sArenaMixin:UpdateCastBarSettings(db, info, val)
             castBar.sArenaBackground:Hide()
         end
 
-        -- Apply castbar style (matches sArena_Reloaded Midnight approach)
+        -- Apply castbar style for Midnight
         if isModern then
             -- Modern: thin bar with rounded mask, spell name below
             castBar:SetHeight(9)
@@ -796,7 +796,9 @@ sArenaMixin.optionsTable = {
                                                 info.handler.db.profile.statusText.usePercentage = val
 
                                                 local _, instanceType = IsInInstance()
-                                                if ( instanceType ~= "arena" and info.handler.arena1:IsShown() ) then
+                                                if instanceType == "arena" then
+                                                    for i = 1, 3 do info.handler["arena"..i]:SetStatusText() end
+                                                elseif info.handler.arena1:IsShown() then
                                                     info.handler:Test()
                                                 end
                                             end,

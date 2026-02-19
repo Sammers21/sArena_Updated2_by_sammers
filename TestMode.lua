@@ -107,7 +107,7 @@ function sArenaMixin:Test()
         end
 
         frame.hideStatusText = false
-        frame:SetStatusText("player")
+        frame:SetStatusText("player", 100000)
         frame:UpdateStatusTextVisible()
     end
 

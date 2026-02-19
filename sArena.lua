@@ -29,6 +29,18 @@ local emptyLayoutOptionsTable = {
 
 local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 
+-- FormatHP is only safe for non-secret (literal/test) numbers.
+-- For live arena, UnitHealth() returns a secret value; use AbbreviateLargeNumbers() instead.
+local function FormatHP(hp)
+    if hp >= 1e6 then
+        return string.format("%.1fm", hp / 1e6)
+    elseif hp >= 1e3 then
+        return string.format("%.0fk", hp / 1e3)
+    else
+        return tostring(hp)
+    end
+end
+
 local function ChatCommand(input)
     if not input or input:trim() == "" then
         LibStub("AceConfigDialog-3.0"):Open("sArena")
@@ -363,7 +375,7 @@ function sArenaFrameMixin:SetLifeState()
     self.hideStatusText = isDead
 end
 
-function sArenaFrameMixin:SetStatusText(unit)
+function sArenaFrameMixin:SetStatusText(unit, fakeHP)
     if (self.hideStatusText) then
         self.HealthText:SetText("")
         self.PowerText:SetText("")
@@ -374,8 +386,15 @@ function sArenaFrameMixin:SetStatusText(unit)
         unit = self.unit
     end
 
-    self.HealthText:SetFormattedText("%0.f%%", UnitHealthPercent(unit, nil, CurveConstants.ScaleTo100))
-    self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
+    if db.profile.statusText.usePercentage then
+        self.HealthText:SetFormattedText("%0.f%%", UnitHealthPercent(unit, nil, CurveConstants.ScaleTo100))
+        self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
+    else
+        -- fakeHP is a non-secret literal (test mode only) so FormatHP is safe.
+        -- UnitHealth() returns a secret; AbbreviateLargeNumbers() accepts secrets.
+        self.HealthText:SetText(fakeHP and FormatHP(fakeHP) or AbbreviateLargeNumbers(UnitHealth(unit)))
+        self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
+    end
 end
 
 function sArenaFrameMixin:UpdateStatusTextVisible()
