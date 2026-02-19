@@ -68,9 +68,9 @@ for i = 1, 3 do
 
     -- Everything below lives on the Overlay so it renders above bars AND border texture.
     -- Draw layer order on Overlay: ARTWORK,2 (border) < ARTWORK,3 (Name) < OVERLAY (text, death icon)
-    frame.Name = frame.Overlay:CreateFontString(nil, "ARTWORK", nil, 3)
-    frame.HealthText = frame.Overlay:CreateFontString(nil, "OVERLAY", nil, 3)
-    frame.PowerText = frame.Overlay:CreateFontString(nil, "OVERLAY", nil, 3)
+    frame.Name = frame.Overlay:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall", 3)
+    frame.HealthText = frame.Overlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall", 3)
+    frame.PowerText = frame.Overlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall", 3)
 
     -- Death icon (on Overlay so it renders above the border)
     frame.DeathIcon = frame.Overlay:CreateTexture(nil, "OVERLAY", nil, 2)

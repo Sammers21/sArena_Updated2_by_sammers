@@ -418,14 +418,33 @@ function sArenaFrameMixin:OnLoad()
     local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
     if blizzArenaFrame and blizzArenaFrame.CastingBarFrame then
         self.CastBar = blizzArenaFrame.CastingBarFrame
+        self._blizzardCastBar = true  -- flag on our frame so ResetLayout skips ClearAllPoints
         self.CastBar:SetParent(self)
         self.CastBar:SetFrameStrata("HIGH")
-        -- Override Blizzard's GetTypeInfo so we control colors and textures
-        Mixin(self.CastBar, sArenaCastingBarExtensionMixin)
-        -- Reapply layout texture after Blizzard resets it on cast events
+        -- Share typeInfo so layouts can update textures. Do NOT override GetTypeInfo
+        -- on this protected frame: barType is a secretwrap() value and using it as a
+        -- table key in addon code triggers "table index is secret" on Midnight.
+        self.CastBar.typeInfo = sArenaCastingBarExtensionMixin.typeInfo
+        -- Reapply layout texture and color after Blizzard resets them on cast events
         self.CastBar:HookScript("OnEvent", function(castBar)
-            if castBar.typeInfo then
-                castBar:SetStatusBarTexture(castBar.typeInfo.filling)
+            if not castBar.typeInfo then return end
+            castBar:SetStatusBarTexture(castBar.typeInfo.filling)
+            local castName, _, _, _, _, _, notInterruptible = UnitCastingInfo(unit)
+            if castName then
+                if notInterruptible then
+                    castBar:SetStatusBarColor(0.7, 0.7, 0.7, 1) -- uninterruptible: gray
+                else
+                    castBar:SetStatusBarColor(1.0, 0.7, 0.0, 1) -- normal cast: orange
+                end
+            else
+                local chanName, _, _, _, _, _, notInterruptible2 = UnitChannelInfo(unit)
+                if chanName then
+                    if notInterruptible2 then
+                        castBar:SetStatusBarColor(0.7, 0.7, 0.7, 1) -- uninterruptible channel: gray
+                    else
+                        castBar:SetStatusBarColor(0.0, 1.0, 0.0, 1) -- channel: green
+                    end
+                end
             end
         end)
     end

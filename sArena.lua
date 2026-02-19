@@ -304,8 +304,10 @@ function sArenaFrameMixin:ResetLayout()
     sArenaFrameMixin.ResetTexture(nil, self.ClassIcon)
     ResetStatusBar(self.HealthBar)
     ResetStatusBar(self.PowerBar)
-    ResetStatusBar(self.CastBar)
-    self.CastBar:SetHeight(16)
+    if not self._blizzardCastBar then
+        ResetStatusBar(self.CastBar)
+        self.CastBar:SetHeight(16)
+    end
     self.ClassIcon:RemoveMaskTexture(self.ClassIconMask)
 
     self.ClassIconCooldown:SetSwipeTexture(1)
@@ -391,21 +393,3 @@ if sArenaCastingBarExtensionMixin then
     }
 end
 
-local actionColors = {
-    applyingcrafting = { 1.0, 0.7, 0.0, 1 },
-    applyingtalents = { 1.0, 0.7, 0.0, 1 },
-    filling = { 1.0, 0.7, 0.0, 1 },
-    full = { 0.0, 1.0, 0.0, 1 },
-    standard = { 1.0, 0.7, 0.0, 1 },
-    empowered = { 1.0, 0.7, 0.0, 1 },
-    channel = { 0.0, 1.0, 0.0, 1 },
-    uninterruptable = { 0.7, 0.7, 0.7, 1 },
-    interrupted = { 1.0, 0.0, 0.0, 1 }
-}
-
-function sArenaCastingBarExtensionMixin:GetTypeInfo(barType)
-    barType = barType or "standard"
-    local colors = actionColors[barType] or actionColors.standard
-    self:SetStatusBarColor(unpack(colors))
-    return self.typeInfo
-end
