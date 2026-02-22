@@ -388,13 +388,12 @@ function sArenaFrameMixin:SetStatusText(unit, fakeHP)
 
     if db.profile.statusText.usePercentage then
         self.HealthText:SetFormattedText("%0.f%%", UnitHealthPercent(unit, nil, CurveConstants.ScaleTo100))
-        self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
     else
         -- fakeHP is a non-secret literal (test mode only) so FormatHP is safe.
         -- UnitHealth() returns a secret; AbbreviateLargeNumbers() accepts secrets.
         self.HealthText:SetText(fakeHP and FormatHP(fakeHP) or AbbreviateLargeNumbers(UnitHealth(unit)))
-        self.PowerText:SetFormattedText("%0.f%%", UnitPowerPercent(unit, nil, CurveConstants.ScaleTo100))
     end
+    self.PowerText:SetText("")
 end
 
 function sArenaFrameMixin:UpdateStatusTextVisible()
