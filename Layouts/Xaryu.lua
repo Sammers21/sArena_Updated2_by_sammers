@@ -51,24 +51,14 @@ layout.defaultSettings = {
     classicBars = false,
 }
 
-local function getSetting(info)
-    return layout.db[info[#info]]
-end
-
-local function setSetting(info, val)
-    layout.db[info[#info]] = val
-
-    for i = 1, 3 do
-        local frame = info.handler["arena" .. i]
-        frame:SetSize(layout.db.width, layout.db.height)
-        frame.ClassIcon:SetSize(layout.db.height, layout.db.height)
-        frame.DeathIcon:SetSize(layout.db.height * 0.8, layout.db.height * 0.8)
-        frame.PowerBar:SetHeight(layout.db.powerBarHeight)
-        layout:UpdateOrientation(frame)
-        layout:UpdateTextures(frame)
-        layout:UpdateTextures(frame)
-    end
-end
+local getSetting, setSetting = sArenaMixin:CreateLayoutAccessors(layout, function(l, frame)
+    frame:SetSize(l.db.width, l.db.height)
+    frame.ClassIcon:SetSize(l.db.height, l.db.height)
+    frame.DeathIcon:SetSize(l.db.height * 0.8, l.db.height * 0.8)
+    frame.PowerBar:SetHeight(l.db.powerBarHeight)
+    l:UpdateOrientation(frame)
+    l:UpdateTextures(frame)
+end)
 
 local function setupOptionsTable(self)
     layout.optionsTable = self:GetLayoutOptionsTable(layoutName)
@@ -230,7 +220,7 @@ function layout:UpdateTextures(frame)
     local texture = self.db.classicBars and "Interface\\TargetingFrame\\UI-StatusBar" or
         "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
 
-    frame.CastBar.typeInfo = {
+    frame.CastBar.barFillData = {
         filling = texture,
         full = texture,
         glow = texture

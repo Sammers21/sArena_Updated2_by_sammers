@@ -594,19 +594,13 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
             frame.drTray:ClearAllPoints()
             frame.drTray:SetPoint(anchor, frame, relAnchor, db.posX or 0, db.posY or 0)
 
-            for _, drFrame in ipairs(frame.drFrames) do
+            for drFrame in pairs(frame.drFrames) do
                 drFrame:SetSize(db.size, db.size)
 
-                if drFrame.Border then
-                    drFrame.Border:ClearAllPoints()
-                    drFrame.Border:SetPoint("TOPLEFT", drFrame, "TOPLEFT", -(db.borderSize or 2.5), (db.borderSize or 2.5))
-                    drFrame.Border:SetPoint("BOTTOMRIGHT", drFrame, "BOTTOMRIGHT", (db.borderSize or 2.5), -(db.borderSize or 2.5))
-                end
-
-                if drFrame.BorderImmune then
-                    drFrame.BorderImmune:ClearAllPoints()
-                    drFrame.BorderImmune:SetPoint("TOPLEFT", drFrame, "TOPLEFT", -(db.borderSize or 2.5), (db.borderSize or 2.5))
-                    drFrame.BorderImmune:SetPoint("BOTTOMRIGHT", drFrame, "BOTTOMRIGHT", (db.borderSize or 2.5), -(db.borderSize or 2.5))
+                if drFrame.SeverityBorder then
+                    drFrame.SeverityBorder:ClearAllPoints()
+                    drFrame.SeverityBorder:SetPoint("TOPLEFT", drFrame, "TOPLEFT", -(db.borderSize or 2.5), (db.borderSize or 2.5))
+                    drFrame.SeverityBorder:SetPoint("BOTTOMRIGHT", drFrame, "BOTTOMRIGHT", (db.borderSize or 2.5), -(db.borderSize or 2.5))
                 end
 
                 if drFrame.Cooldown then
@@ -621,19 +615,9 @@ function sArenaMixin:UpdateDRSettings(db, info, val)
                     end
                 end
 
-                if drFrame.DRText then
-                    drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
-                end
-
-                if drFrame.DRText2 then
-                    drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
-                end
-
-                if drFrame.DRTextFrame then
-                    drFrame.DRTextFrame:SetShown(db.showDRText == true)
-                end
-                if drFrame.DRText2 then
-                    drFrame.DRText2:SetShown(db.showDRText == true)
+                if drFrame.SeverityLabel then
+                    drFrame.SeverityLabel:SetFont("Fonts\\ARIALN.TTF", db.fontSize or 14, "OUTLINE")
+                    drFrame.SeverityLabel:SetShown(db.showDRText == true)
                 end
             end
         end
@@ -827,6 +811,24 @@ sArenaMixin.optionsTable = {
                                     set = function(info, val) info.handler.db.profile.showNames = val for i = 1, 3 do info.handler["arena"..i].Name:SetShown(val) end end,
                                 },
                             },
+                        },
+                    },
+                },
+                combatLoggingGroup = {
+                    order = 2,
+                    name = "Combat Logging",
+                    type = "group",
+                    args = {
+                        enableCombatLogging = {
+                            order = 1,
+                            name = "Enable Combat Logging",
+                            desc = "Automatically enable combat logging when entering arenas or battlegrounds. Logs are saved to WoW's Logs folder for analysis on sites like WoWArenaLogs.",
+                            type = "toggle",
+                            width = "full",
+                            get = function(info) return info.handler.db.profile.enableCombatLogging end,
+                            set = function(info, val)
+                                info.handler.db.profile.enableCombatLogging = val
+                            end,
                         },
                     },
                 },

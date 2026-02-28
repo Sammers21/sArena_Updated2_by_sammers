@@ -48,18 +48,9 @@ layout.defaultSettings = {
     mirrored = false,
 }
 
-local function getSetting(info)
-    return layout.db[info[#info]]
-end
-
-local function setSetting(info, val)
-    layout.db[info[#info]] = val
-
-    for i = 1, 3 do
-        local frame = info.handler["arena" .. i]
-        layout:UpdateOrientation(frame)
-    end
-end
+local getSetting, setSetting = sArenaMixin:CreateLayoutAccessors(layout, function(l, frame)
+    l:UpdateOrientation(frame)
+end)
 
 local function setupOptionsTable(self)
     layout.optionsTable = self:GetLayoutOptionsTable(layoutName)
@@ -181,13 +172,9 @@ function layout:Initialize(frame)
     castBarBorder:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 2)
     castBarBorder:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -2)
     castBarBorder:Show()
-    local typeInfoTexture = "ui-castingbar-tier4-empower-2x";
-    f:SetStatusBarTexture(typeInfoTexture)
-    f.typeInfo = {
-        filling = typeInfoTexture,
-        full = typeInfoTexture,
-        glow = typeInfoTexture
-    }
+    local barTex = "ui-castingbar-tier4-empower-2x"
+    f:SetStatusBarTexture(barTex)
+    f.barFillData = { filling = barTex, full = barTex, glow = barTex }
 
     f = frame.DeathIcon
     f:ClearAllPoints()

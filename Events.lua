@@ -1,42 +1,52 @@
--- Events.lua: Event handlers, hooks, and Blizzard frame stealing
+-- Events.lua: Event handlers, hooks, and Blizzard frame integration
 
 -- Spell API shim
 local GetSpellTexture = GetSpellTexture or C_Spell.GetSpellTexture
 
--- Localize frequently-called globals for the event hot path
-local UnitHealthMax = UnitHealthMax
-local UnitHealth = UnitHealth
-local UnitPowerMax = UnitPowerMax
-local UnitPower = UnitPower
-local UnitPowerType = UnitPowerType
+-- Cache globals used in event hot-path
+local UnitHealthMax    = UnitHealthMax
+local UnitHealth       = UnitHealth
+local UnitPowerMax     = UnitPowerMax
+local UnitPower        = UnitPower
+local UnitPowerType    = UnitPowerType
+local UnitCastingInfo  = UnitCastingInfo
+local UnitChannelInfo  = UnitChannelInfo
+local mathfloor        = math.floor
+local strfind          = string.find
 
-local blizzFrame
+local hiddenAnchor  -- invisible frame used to hide Blizzard's arena UI
 
-local function UpdateBlizzVisibility(instanceType)
-    -- hide blizz arena frames while in arena
-    if (InCombatLockdown()) then return end
+local NUM_ARENA_FRAMES = 3
 
-    if CompactArenaFrame then
-        if (not blizzFrame) then
-            blizzFrame = CreateFrame("Frame")
-            blizzFrame:Hide()
-        end
-        if (instanceType == "arena") then
-            CompactArenaFrame:SetParent(blizzFrame)
-            if CompactArenaFrameTitle then
-                CompactArenaFrameTitle:SetParent(blizzFrame)
-            end
+-- Color palette for castbar states (keyed by type)
+local CASTBAR_COLORS = {
+    casting    = { 1.0, 0.7, 0.0, 1 },
+    channeling = { 0.0, 1.0, 0.0, 1 },
+}
+
+-- ============================================================
+-- Hide Blizzard default arena frames
+-- ============================================================
+local function SuppressBlizzardArenaUI(instanceType)
+    if InCombatLockdown() then return end
+    if not CompactArenaFrame then return end
+
+    if not hiddenAnchor then
+        hiddenAnchor = CreateFrame("Frame")
+        hiddenAnchor:Hide()
+    end
+
+    if instanceType == "arena" then
+        CompactArenaFrame:SetParent(hiddenAnchor)
+        if CompactArenaFrameTitle then
+            CompactArenaFrameTitle:SetParent(hiddenAnchor)
         end
     end
 end
 
--- Parent Frame
-
-function sArenaMixin:OnLoad()
-    self:RegisterEvent("PLAYER_LOGIN")
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
-end
-
+-- ============================================================
+-- Edit-Mode / Reload helpers
+-- ============================================================
 local reloadWarningFrame
 local beenInArena = false
 
@@ -64,17 +74,15 @@ local function ShowReloadWarning()
     f:SetFrameStrata("DIALOG")
     f:EnableMouse(true)
 
-    -- Dark backdrop with teal-tinted border
     f:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
         edgeSize = 1,
-        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+        insets   = { left = 1, right = 1, top = 1, bottom = 1 },
     })
     f:SetBackdropColor(0.05, 0.05, 0.09, 0.95)
     f:SetBackdropBorderColor(0.22, 0.75, 0.82, 0.5)
 
-    -- Top accent stripe
     local stripe = f:CreateTexture(nil, "ARTWORK")
     stripe:SetTexture("Interface\\Buttons\\WHITE8x8")
     stripe:SetPoint("TOPLEFT", 1, -1)
@@ -82,25 +90,21 @@ local function ShowReloadWarning()
     stripe:SetHeight(2)
     stripe:SetVertexColor(0.2, 0.82, 0.9, 1)
 
-    -- Warning icon
     local icon = f:CreateTexture(nil, "OVERLAY")
     icon:SetTexture("Interface\\DialogFrame\\DialogAlertIcon")
     icon:SetSize(36, 36)
     icon:SetPoint("TOP", 0, -14)
 
-    -- Title
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOP", icon, "BOTTOM", 0, -6)
     title:SetText("|cff40d0e0Reload Required|r")
 
-    -- Body text
     local body = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     body:SetPoint("TOP", title, "BOTTOM", 0, -10)
     body:SetWidth(360)
     body:SetJustifyH("CENTER")
     body:SetText("Edit Mode causes the DR frames to error\nafter the first arena game.\n\n|cff888899Reload UI to fix.|r")
 
-    -- Reload UI button
     local btn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     btn:SetSize(140, 28)
     btn:SetPoint("BOTTOM", 0, 28)
@@ -110,7 +114,6 @@ local function ShowReloadWarning()
         ReloadUI()
     end)
 
-    -- Subtle dismiss text
     local dismissText = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     dismissText:SetPoint("TOP", btn, "BOTTOM", 0, -3)
     dismissText:SetText("|cff555566dismiss|r")
@@ -122,7 +125,6 @@ local function ShowReloadWarning()
     dismissBtn:SetScript("OnEnter", function() dismissText:SetText("|cff8899aadismiss|r") end)
     dismissBtn:SetScript("OnLeave", function() dismissText:SetText("|cff555566dismiss|r") end)
 
-    -- Fade-in animation
     f:SetAlpha(0)
     local ag = f:CreateAnimationGroup()
     local anim = ag:CreateAnimation("Alpha")
@@ -136,23 +138,36 @@ local function ShowReloadWarning()
     reloadWarningFrame = f
 end
 
+-- ============================================================
+-- Parent Frame Events
+-- ============================================================
+function sArenaMixin:OnLoad()
+    self:RegisterEvent("PLAYER_LOGIN")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
+end
+
 function sArenaMixin:OnEvent(event, ...)
-    if (event == "PLAYER_LOGIN") then
+    if event == "PLAYER_LOGIN" then
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
 
-        -- If logging in outside arena, mark beenInArena after 3s so the
-        -- very first arena entry will show the warning. If logging in
-        -- inside arena (reconnect), leave it false so this arena works.
         local _, loginInstanceType = IsInInstance()
         if loginInstanceType ~= "arena" then
             C_Timer.After(3, function() beenInArena = true end)
         end
-    elseif (event == "PLAYER_ENTERING_WORLD") then
+    elseif event == "PLAYER_ENTERING_WORLD" then
         local _, instanceType = IsInInstance()
-        UpdateBlizzVisibility(instanceType)
+        SuppressBlizzardArenaUI(instanceType)
         self:SetMouseState(true)
-        if (instanceType == "arena") then
+
+        if self.db and self.db.profile.enableCombatLogging then
+            if instanceType == "arena" or instanceType == "pvp" then
+                LoggingCombat(true)
+                self:Print("Combat logging enabled. Good luck!")
+            end
+        end
+
+        if instanceType == "arena" then
             self.inArena = true
             if beenInArena then
                 ShowReloadWarning()
@@ -162,287 +177,323 @@ function sArenaMixin:OnEvent(event, ...)
         else
             self.inArena = false
         end
+
         if not self.drFramesInitialized then
-            self:InitializeDRFrames()
+            self:SetupDiminishingReturns()
             self.drFramesInitialized = true
         end
     end
 end
 
--- Apply sArena visual customizations to a single Blizzard DR tray item.
--- Called lazily when the frame is first used (Blizzard creates pool frames on demand).
-local function initializeSArenaDRFrame(drFrame)
-    if drFrame._isSArenaTracked then return end
-    drFrame._isSArenaTracked = true
+-- ============================================================
+-- DR Frame Customization
+-- ============================================================
 
-    drFrame:EnableMouse(false)
-    drFrame:SetMouseClickEnabled(false)
+-- Decorate a single Blizzard DR pool frame with colored border & severity text.
+-- Uses a flat overlay approach: one overlay hosts both the border and the label.
+local function CustomizeDRIcon(drIcon)
+    if drIcon._customized then return end
+    drIcon._customized = true
 
-    -- Create overlay frame at high level so border renders above Blizzard textures
-    drFrame.Boverlay = CreateFrame("Frame", nil, drFrame)
-    drFrame.Boverlay:SetAllPoints(drFrame)
-    drFrame.Boverlay:SetFrameStrata("MEDIUM")
-    drFrame.Boverlay:SetFrameLevel(26)
-    drFrame.Boverlay:Show()
+    drIcon:EnableMouse(false)
+    drIcon:SetMouseClickEnabled(false)
 
-    -- Create border on the overlay for severity coloring (green/red)
-    drFrame.Border = drFrame.Boverlay:CreateTexture(nil, "OVERLAY", nil, 6)
-    drFrame.Border:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-    drFrame.Border:SetAllPoints(drFrame)
-    drFrame.Border:SetVertexColor(0, 1, 0, 1)
-    drFrame.Border:Show()
+    -- Colored border — sits at BORDER layer behind the icon (ARTWORK),
+    -- extends beyond icon edges so it's visible as a colored rim.
+    local borderSize = 2
+    drIcon.SeverityBorder = drIcon:CreateTexture(nil, "BORDER", nil, -1)
+    drIcon.SeverityBorder:SetPoint("TOPLEFT", drIcon, "TOPLEFT", -borderSize, borderSize)
+    drIcon.SeverityBorder:SetPoint("BOTTOMRIGHT", drIcon, "BOTTOMRIGHT", borderSize, -borderSize)
+    drIcon.SeverityBorder:SetColorTexture(0, 1, 0, 1)
+    drIcon.SeverityBorder:Show()
 
-    -- Create DR severity text overlay (½ = non-immune, always visible when DR frame shows)
-    drFrame.DRTextFrame = CreateFrame("Frame", nil, drFrame)
-    drFrame.DRTextFrame:SetAllPoints(drFrame)
-    drFrame.DRTextFrame:SetFrameStrata("HIGH")
-    drFrame.DRTextFrame:SetFrameLevel(30)
+    -- DR severity label — drawn on top of everything
+    drIcon.SeverityLabel = drIcon:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+    drIcon.SeverityLabel:SetPoint("BOTTOMRIGHT", drIcon, "BOTTOMRIGHT", 3, -3)
+    drIcon.SeverityLabel:SetFont("Fonts\\ARIALN.TTF", 13, "OUTLINE")
+    drIcon.SeverityLabel:SetTextColor(0, 1, 0, 1)
+    drIcon.SeverityLabel:SetText("\194\189") -- ½
 
-    drFrame.DRText = drFrame.DRTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    drFrame.DRText:SetPoint("BOTTOMRIGHT", 4, -4)
-    drFrame.DRText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
-    drFrame.DRText:SetTextColor(0, 1, 0, 1)
-    drFrame.DRText:SetText("½")
-
-    -- Immune overlay: child of ImmunityIndicator, so it shows/hides with the immune state
-    -- automatically (child inherits parent visibility — no HookScript needed, which would
-    -- fail with "secret aspects"). "HIGH" strata level 35 renders above the green border
-    -- (MEDIUM) and ½ text (HIGH/30), covering them visually when immune.
-    if drFrame.ImmunityIndicator then
-        drFrame.ImmunityIndicator:SetFrameStrata("MEDIUM")
-        drFrame.ImmunityIndicator:SetFrameLevel(27)
-        -- Hide Blizzard's native shield texture; prevent it being restored.
-        drFrame.ImmunityIndicator:SetAlpha(0)
-        local forcingAlpha = false
-        hooksecurefunc(drFrame.ImmunityIndicator, "SetAlpha", function(imm, alpha)
-            if not forcingAlpha and alpha ~= 0 then
-                forcingAlpha = true
-                imm:SetAlpha(0)
-                forcingAlpha = false
+    -- Immune indicator: detect via hooksecurefunc on Show/Hide methods
+    -- (HookScript "OnShow"/"OnHide" is blocked on frames with secret aspects)
+    if drIcon.ImmunityIndicator then
+        -- Suppress Blizzard's shield graphic
+        drIcon.ImmunityIndicator:SetAlpha(0)
+        local guardAlpha = false
+        hooksecurefunc(drIcon.ImmunityIndicator, "SetAlpha", function(self, a)
+            if not guardAlpha and a ~= 0 then
+                guardAlpha = true
+                self:SetAlpha(0)
+                guardAlpha = false
             end
         end)
 
-        local immuneOverlay = CreateFrame("Frame", nil, drFrame.ImmunityIndicator)
-        immuneOverlay:SetAllPoints(drFrame)
-        immuneOverlay:SetFrameStrata("HIGH")
-        immuneOverlay:SetFrameLevel(35)
-        immuneOverlay:SetIgnoreParentAlpha(true)
+        -- When immune state begins: swap to red
+        hooksecurefunc(drIcon.ImmunityIndicator, "Show", function()
+            drIcon.SeverityBorder:SetColorTexture(1, 0, 0, 1)
+            drIcon.SeverityLabel:SetTextColor(1, 0, 0, 1)
+            drIcon.SeverityLabel:SetText("X")
+        end)
 
-        drFrame.BorderImmune = immuneOverlay:CreateTexture(nil, "OVERLAY", nil, 7)
-        drFrame.BorderImmune:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-        drFrame.BorderImmune:SetAllPoints(drFrame)
-        drFrame.BorderImmune:SetVertexColor(1, 0, 0, 1)
-
-        drFrame.DRText2 = immuneOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        drFrame.DRText2:SetPoint("BOTTOMRIGHT", 4, -4)
-        drFrame.DRText2:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
-        drFrame.DRText2:SetTextColor(1, 0, 0, 1)
-        drFrame.DRText2:SetText("%")
+        -- When immune state ends: revert to green
+        hooksecurefunc(drIcon.ImmunityIndicator, "Hide", function()
+            drIcon.SeverityBorder:SetColorTexture(0, 1, 0, 1)
+            drIcon.SeverityLabel:SetTextColor(0, 1, 0, 1)
+            drIcon.SeverityLabel:SetText("\194\189") -- ½
+        end)
     end
 
-    -- Cooldown cosmetic settings
-    if drFrame.Cooldown then
-        drFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.6)
-        drFrame.Cooldown:SetDrawBling(false)
-        drFrame.Cooldown:SetHideCountdownNumbers(false)
+    -- Cooldown sweep styling
+    if drIcon.Cooldown then
+        drIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.6)
+        drIcon.Cooldown:SetDrawBling(false)
+        drIcon.Cooldown:SetHideCountdownNumbers(false)
     end
 
-    -- Reset visuals when DR frame hides (DR timer expired / pool release)
-    drFrame:HookScript("OnHide", function()
-        drFrame.Border:SetAlpha(1)
-        drFrame.Border:SetVertexColor(0, 1, 0, 1)
-        drFrame.DRText:SetAlpha(1)
-        drFrame.DRText:SetText("½")
-        drFrame.DRText:SetTextColor(0, 1, 0, 1)
+    -- Restore default visuals when the DR expires / frame returns to pool
+    drIcon:HookScript("OnHide", function()
+        drIcon.SeverityBorder:SetColorTexture(0, 1, 0, 1)
+        drIcon.SeverityLabel:SetTextColor(0, 1, 0, 1)
+        drIcon.SeverityLabel:SetText("\194\189") -- ½
     end)
 end
 
-function sArenaMixin:InitializeDRFrames()
-    -- Blizzard's SpellDiminishStatusTray creates DR item frames from an UnsecuredFramePool
-    -- on demand (when UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED fires). GetChildren()
-    -- returns nothing at init time. We hook the tray's OnEvent (fires after Blizzard's handler)
-    -- and iterate tray.activeItemForCategory to catch new frames without touching secret args.
-    -- ½/% text and green/red border are handled inside initializeSArenaDRFrame via
-    -- ImmunityIndicator:HookScript("OnShow"/"OnHide") — no UpdateState hook needed.
-    for i = 1, 3 do
-        local frame = self["arena" .. i]
-        if not frame.drTray then break end
+-- Walk all trays and customise any unclaimed DR children.
+local function ScanTrayChildren(addonSelf, arenaFrame)
+    local tray = arenaFrame.drTray
+    if not tray then return end
 
-        local tray = frame.drTray
-        tray:SetFrameStrata("HIGH")
-        tray:SetFrameLevel(10)
-        if not frame.drFrames then
-            frame.drFrames = {}
-        end
+    local childCount = tray:GetNumChildren()
+    for idx = 1, childCount do
+        local child = select(idx, tray:GetChildren())
+        if child and not child._customized then
+            CustomizeDRIcon(child)
+            arenaFrame.drFrames[child] = true -- keyed set, not array
 
-        -- Initialize any existing children (e.g. from EditMode preview)
-        for _, drFrame in ipairs({ tray:GetChildren() }) do
-            if not drFrame._isSArenaTracked then
-                initializeSArenaDRFrame(drFrame)
-                table.insert(frame.drFrames, drFrame)
-            end
-        end
-
-        -- Catch pool frames acquired after init. activeItemForCategory is a forbidden
-        -- table (can't be iterated from addon code). Use GetChildren() on our captured
-        -- tray reference instead — same result, no forbidden table access.
-        local addonSelf = self
-        tray:HookScript("OnEvent", function(_, event)
-            if event ~= "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then return end
-            for _, drFrame in ipairs({ tray:GetChildren() }) do
-                if not drFrame._isSArenaTracked then
-                    initializeSArenaDRFrame(drFrame)
-                    table.insert(frame.drFrames, drFrame)
-                    if addonSelf.db then
-                        local layoutName = addonSelf.db.profile.currentLayout
-                        local layoutSettings = addonSelf.db.profile.layoutSettings[layoutName]
-                        if layoutSettings and layoutSettings.dr then
-                            addonSelf:UpdateDRSettings(layoutSettings.dr)
-                        end
-                    end
+            if addonSelf.db then
+                local curLayout = addonSelf.db.profile.currentLayout
+                local ls = addonSelf.db.profile.layoutSettings[curLayout]
+                if ls and ls.dr then
+                    addonSelf:UpdateDRSettings(ls.dr)
                 end
             end
+        end
+    end
+end
+
+function sArenaMixin:SetupDiminishingReturns()
+    for idx = 1, NUM_ARENA_FRAMES do
+        local arenaFrame = self["arena" .. idx]
+        if not arenaFrame.drTray then break end
+
+        local tray = arenaFrame.drTray
+        tray:SetFrameStrata("HIGH")
+        tray:SetFrameLevel(10)
+        if not arenaFrame.drFrames then
+            arenaFrame.drFrames = {}
+        end
+
+        -- Process any children already present (e.g. EditMode preview)
+        ScanTrayChildren(self, arenaFrame)
+
+        -- Listen for new pool frames when Blizzard fires DR updates
+        local parentAddon = self
+        tray:HookScript("OnEvent", function(_, evt)
+            if evt == "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED" then
+                ScanTrayChildren(parentAddon, arenaFrame)
+            end
         end)
     end
 
-    -- Apply current settings
+    -- Refresh with saved settings
     if self.db then
-        local layoutName = self.db.profile.currentLayout
-        local layoutSettings = self.db.profile.layoutSettings[layoutName]
-        if layoutSettings and layoutSettings.dr then
-            self:UpdateDRSettings(layoutSettings.dr)
+        local curLayout = self.db.profile.currentLayout
+        local ls = self.db.profile.layoutSettings[curLayout]
+        if ls and ls.dr then
+            self:UpdateDRSettings(ls.dr)
         end
     end
 end
 
-function sArenaMixin:SetupDrag(frameToClick, frameToMove, settingsTable, updateMethod)
-    frameToClick:HookScript("OnMouseDown", function()
-        if (InCombatLockdown()) then return end
+-- ============================================================
+-- Ctrl+Shift Drag-to-reposition
+-- ============================================================
+function sArenaMixin:EnableFrameDragging(clickTarget, moveTarget, settingsKey, refreshMethod)
+    local dragging = false
 
-        if (IsShiftKeyDown() and IsControlKeyDown() and not frameToMove.isMoving) then
-            frameToMove:StartMoving()
-            frameToMove.isMoving = true
+    clickTarget:HookScript("OnMouseDown", function()
+        if InCombatLockdown() then return end
+        if IsShiftKeyDown() and IsControlKeyDown() and not dragging then
+            moveTarget:StartMoving()
+            dragging = true
         end
     end)
 
-    frameToClick:HookScript("OnMouseUp", function()
-        if (InCombatLockdown()) then return end
+    clickTarget:HookScript("OnMouseUp", function()
+        if InCombatLockdown() then return end
+        if not dragging then return end
 
-        if (frameToMove.isMoving) then
-            frameToMove:StopMovingOrSizing()
-            frameToMove.isMoving = false
+        moveTarget:StopMovingOrSizing()
+        dragging = false
 
-            local settings = self.db.profile.layoutSettings[self.db.profile.currentLayout]
+        local cfg = self.db.profile.layoutSettings[self.db.profile.currentLayout]
+        if settingsKey then
+            cfg = cfg[settingsKey]
+        end
 
-            if (settingsTable) then
-                settings = settings[settingsTable]
+        -- Compute offset relative to parent centre using GetRect
+        local pLeft, pBottom, pWidth, pHeight = moveTarget:GetParent():GetRect()
+        local mLeft, mBottom, mWidth, mHeight = moveTarget:GetRect()
+        local scale = moveTarget:GetScale()
+
+        local parentCX = pLeft + pWidth * 0.5
+        local parentCY = pBottom + pHeight * 0.5
+        local frameCX  = (mLeft + mWidth * 0.5) * scale
+        local frameCY  = (mBottom + mHeight * 0.5) * scale
+
+        local offX = (frameCX - parentCX) / scale
+        local offY = (frameCY - parentCY) / scale
+
+        -- Snap to single decimal
+        offX = mathfloor(offX * 10 + 0.5) * 0.1
+        offY = mathfloor(offY * 10 + 0.5) * 0.1
+
+        cfg.posX, cfg.posY = offX, offY
+        self[refreshMethod](self, cfg)
+        LibStub("AceConfigRegistry-3.0"):NotifyChange("sArena")
+    end)
+end
+
+-- ============================================================
+-- Arena Frame helpers — hook Blizzard castbar, debuffs, trinket
+-- ============================================================
+
+-- Redirect the Blizzard castbar into our frame and keep our texture applied.
+local function AttachBlizzardCastBar(arenaFrame, blizzMember, unitID)
+    local castBar = blizzMember.CastingBarFrame
+    if not castBar then return end
+
+    arenaFrame.CastBar = castBar
+    arenaFrame._blizzardCastBar = true
+    castBar:SetParent(arenaFrame)
+    castBar:SetFrameStrata("HIGH")
+
+    -- Store fill data so layouts can swap textures later
+    castBar.barFillData = sArenaCastingBarExtensionMixin.barFillData
+
+    -- After Blizzard resets the bar on cast events, re-apply our color
+    hooksecurefunc(castBar, "SetStatusBarTexture", function(self)
+        if not self.barFillData then return end
+        local castName = UnitCastingInfo(unitID)
+        if castName then
+            local c = CASTBAR_COLORS.casting
+            self:SetStatusBarColor(c[1], c[2], c[3], c[4])
+        else
+            local chanName = UnitChannelInfo(unitID)
+            if chanName then
+                local c = CASTBAR_COLORS.channeling
+                self:SetStatusBarColor(c[1], c[2], c[3], c[4])
             end
-
-            local parentX, parentY = frameToMove:GetParent():GetCenter()
-            local frameX, frameY = frameToMove:GetCenter()
-            local scale = frameToMove:GetScale()
-
-            frameX = ((frameX * scale) - parentX) / scale
-            frameY = ((frameY * scale) - parentY) / scale
-
-            -- round to 1 decimal place
-            frameX = floor(frameX * 10 + 0.5) / 10
-            frameY = floor(frameY * 10 + 0.5) / 10
-
-            settings.posX, settings.posY = frameX, frameY
-            self[updateMethod](self, settings)
-            LibStub("AceConfigRegistry-3.0"):NotifyChange("sArena")
         end
     end)
 end
 
--- Arena Frames
+-- Mirror debuff icon+cooldown from Blizzard's DebuffFrame onto our class icon.
+local function BridgeDebuffsToClassIcon(arenaFrame, blizzMember)
+    local debuff = blizzMember.DebuffFrame
+    if not debuff then return end
+
+    local function ResetToClassIcon()
+        arenaFrame.ClassIconCooldown:Clear()
+        arenaFrame:UpdateClassIcon(true)
+    end
+
+    hooksecurefunc(debuff.Icon, "SetTexture", function(_, tex)
+        if not tex then return end
+        -- Secret texture = real debuff icon from arena; pass straight to C API
+        if issecretvalue(tex) then
+            arenaFrame.ClassIcon:SetTexture(tex)
+        elseif strfind(tex, "QUESTIONMARK", 1, true) then
+            -- Question-mark means no active CC — restore class icon
+            ResetToClassIcon()
+        else
+            arenaFrame.ClassIcon:SetTexture(tex)
+        end
+    end)
+
+    hooksecurefunc(debuff.Cooldown, "SetCooldown", function(_, start, dur)
+        arenaFrame.ClassIconCooldown:SetCooldown(start, dur)
+    end)
+
+    -- Both Clear and frame hiding should restore the real class icon
+    hooksecurefunc(debuff.Cooldown, "Clear", ResetToClassIcon)
+    debuff:HookScript("OnHide", ResetToClassIcon)
+end
+
+-- Relay PvP trinket cooldowns from Blizzard's CcRemoverFrame.
+local function RelayTrinketCooldown(arenaFrame, blizzMember)
+    local ccRemover = blizzMember.CcRemoverFrame
+    if not ccRemover then return end
+
+    ccRemover:SetParent(arenaFrame)
+    ccRemover:SetAlpha(0) -- visually hidden; still fires events
+
+    hooksecurefunc(ccRemover.Cooldown, "SetCooldown", function(_, start, dur)
+        arenaFrame.Trinket.Cooldown:SetCooldown(start, dur)
+    end)
+end
+
+-- ============================================================
+-- Arena Frame Events
+-- ============================================================
+
+-- Events every arena frame listens to
+local FRAME_EVENTS = {
+    "PLAYER_LOGIN",
+    "PLAYER_ENTERING_WORLD",
+    "ARENA_OPPONENT_UPDATE",
+    "ARENA_PREP_OPPONENT_SPECIALIZATIONS",
+    "ARENA_COOLDOWNS_UPDATE",
+    "ARENA_CROWD_CONTROL_SPELL_UPDATE",
+    "UNIT_NAME_UPDATE",
+}
+
+local UNIT_EVENTS = {
+    "UNIT_HEALTH",
+    "UNIT_MAXHEALTH",
+    "UNIT_POWER_UPDATE",
+    "UNIT_MAXPOWER",
+    "UNIT_DISPLAYPOWER",
+}
 
 function sArenaFrameMixin:OnLoad()
-    local unit = "arena" .. self:GetID()
+    local unitID = "arena" .. self:GetID()
     self.parent = self:GetParent()
 
-    self:RegisterEvent("PLAYER_LOGIN")
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    self:RegisterEvent("UNIT_NAME_UPDATE")
-    self:RegisterEvent("ARENA_OPPONENT_UPDATE")
-    self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-    self:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
-    self:RegisterEvent("ARENA_CROWD_CONTROL_SPELL_UPDATE")
-    self:RegisterUnitEvent("UNIT_HEALTH", unit)
-    self:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
-    self:RegisterUnitEvent("UNIT_POWER_UPDATE", unit)
-    self:RegisterUnitEvent("UNIT_MAXPOWER", unit)
-    self:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
+    -- Register general events
+    for _, evt in ipairs(FRAME_EVENTS) do
+        self:RegisterEvent(evt)
+    end
+
+    -- Register per-unit events
+    for _, evt in ipairs(UNIT_EVENTS) do
+        self:RegisterUnitEvent(evt, unitID)
+    end
 
     self:RegisterForClicks("AnyDown", "AnyUp")
     self:SetAttribute("*type1", "target")
     self:SetAttribute("*type2", "focus")
     self:SetAttribute("*typerelease1", "target")
     self:SetAttribute("*typerelease2", "focus")
-    self:SetAttribute("unit", unit)
-    self.unit = unit
+    self:SetAttribute("unit", unitID)
+    self.unit = unitID
 
-    -- Steal castbar from Blizzard's CompactArenaFrame
-    local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
-    if blizzArenaFrame and blizzArenaFrame.CastingBarFrame then
-        self.CastBar = blizzArenaFrame.CastingBarFrame
-        self._blizzardCastBar = true  -- flag on our frame so ResetLayout skips ClearAllPoints
-        self.CastBar:SetParent(self)
-        self.CastBar:SetFrameStrata("HIGH")
-        -- Share typeInfo so layouts can update textures. Do NOT override GetTypeInfo
-        -- on this protected frame: barType is a secretwrap() value and using it as a
-        -- table key in addon code triggers "table index is secret" on Midnight.
-        self.CastBar.typeInfo = sArenaCastingBarExtensionMixin.typeInfo
-        -- Reapply layout texture and color after Blizzard resets them on cast events
-        self.CastBar:HookScript("OnEvent", function(castBar)
-            if not castBar.typeInfo then return end
-            castBar:SetStatusBarTexture(castBar.typeInfo.filling)
-            -- The interrupt flag is a secret boolean on Midnight — cannot be tested.
-            -- Single color per cast type; the interrupt distinction is dropped.
-            local castName = UnitCastingInfo(unit)
-            if castName then
-                castBar:SetStatusBarColor(1.0, 0.7, 0.0, 1) -- cast: orange
-            else
-                local chanName = UnitChannelInfo(unit)
-                if chanName then
-                    castBar:SetStatusBarColor(0.0, 1.0, 0.0, 1) -- channel: green
-                end
-            end
-        end)
-    end
-
-    -- Hook DebuffFrame for CC display on class icon
-    local debuffFrame = blizzArenaFrame and blizzArenaFrame.DebuffFrame
-    if debuffFrame then
-        hooksecurefunc(debuffFrame.Icon, "SetTexture", function(_, tex)
-            if tex == "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK.BLP" then
-                self:UpdateClassIcon(true)
-            else
-                self.ClassIcon:SetTexture(tex)
-            end
-        end)
-        hooksecurefunc(debuffFrame.Cooldown, "SetCooldown", function(_, start, duration)
-            self.ClassIconCooldown:SetCooldown(start, duration)
-        end)
-        hooksecurefunc(debuffFrame.Cooldown, "Clear", function()
-            self.ClassIconCooldown:Clear()
-            self:UpdateClassIcon(true)
-        end)
-        debuffFrame:HookScript("OnHide", function()
-            self.ClassIconCooldown:Clear()
-            self:UpdateClassIcon(true)
-        end)
-    end
-
-    -- Hook CcRemoverFrame for trinket cooldowns
-    if blizzArenaFrame and blizzArenaFrame.CcRemoverFrame then
-        local trinketFrame = blizzArenaFrame.CcRemoverFrame
-        trinketFrame:SetParent(self)
-        trinketFrame:SetAlpha(0)
-        hooksecurefunc(trinketFrame.Cooldown, "SetCooldown", function(_, start, duration)
-            self.Trinket.Cooldown:SetCooldown(start, duration)
-        end)
+    -- Integrate Blizzard's CompactArenaFrame sub-elements into our frame
+    local blizzMember = _G["CompactArenaFrameMember" .. self:GetID()]
+    if blizzMember then
+        AttachBlizzardCastBar(self, blizzMember, unitID)
+        BridgeDebuffsToClassIcon(self, blizzMember)
+        RelayTrinketCooldown(self, blizzMember)
     end
 
     self.TexturePool = CreateTexturePool(self, "ARTWORK", nil, nil, sArenaFrameMixin.ResetTexture)
@@ -451,48 +502,46 @@ end
 function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
     local unit = self.unit
 
-    if (eventUnit and eventUnit == unit) then
-        if (event == "UNIT_NAME_UPDATE") then
+    if eventUnit and eventUnit == unit then
+        if event == "UNIT_NAME_UPDATE" then
             self.Name:SetText(UnitName(unit) or "")
-        elseif (event == "ARENA_OPPONENT_UPDATE") then
+        elseif event == "ARENA_OPPONENT_UPDATE" then
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
-        elseif (event == "ARENA_COOLDOWNS_UPDATE") then
-            -- trinket cooldowns handled via CcRemoverFrame hook
-        elseif (event == "ARENA_CROWD_CONTROL_SPELL_UPDATE") then
-            if not issecretvalue(arg1) and (arg1 ~= self.Trinket.spellID) then
-                local _, spellTextureNoOverride = GetSpellTexture(arg1)
+        elseif event == "ARENA_COOLDOWNS_UPDATE" then
+            -- handled via CcRemoverFrame relay
+        elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then
+            if not issecretvalue(arg1) and arg1 ~= self.Trinket.spellID then
+                local _, spellTex = GetSpellTexture(arg1)
                 self.Trinket.spellID = arg1
-                self.Trinket.Texture:SetTexture(spellTextureNoOverride)
+                self.Trinket.Texture:SetTexture(spellTex)
             end
-        elseif (event == "UNIT_HEALTH") then
+        elseif event == "UNIT_HEALTH" then
             self:SetLifeState()
             self:SetStatusText()
             self.HealthBar:SetValue(UnitHealth(unit))
-        elseif (event == "UNIT_MAXHEALTH") then
+        elseif event == "UNIT_MAXHEALTH" then
             self.HealthBar:SetMinMaxValues(0, UnitHealthMax(unit))
             self.HealthBar:SetValue(UnitHealth(unit))
-        elseif (event == "UNIT_POWER_UPDATE") then
+        elseif event == "UNIT_POWER_UPDATE" then
             self:SetStatusText()
             self.PowerBar:SetValue(UnitPower(unit))
-        elseif (event == "UNIT_MAXPOWER") then
+        elseif event == "UNIT_MAXPOWER" then
             self.PowerBar:SetMinMaxValues(0, UnitPowerMax(unit))
             self.PowerBar:SetValue(UnitPower(unit))
-        elseif (event == "UNIT_DISPLAYPOWER") then
+        elseif event == "UNIT_DISPLAYPOWER" then
             local _, powerType = UnitPowerType(unit)
             self:SetPowerType(powerType)
             self.PowerBar:SetMinMaxValues(0, UnitPowerMax(unit))
             self.PowerBar:SetValue(UnitPower(unit))
         end
-    elseif (event == "PLAYER_LOGIN") then
+    elseif event == "PLAYER_LOGIN" then
         self:UnregisterEvent("PLAYER_LOGIN")
-
-        if (not self.parent.db) then
+        if not self.parent.db then
             self.parent:Initialize()
         end
-
         self:Initialize()
-    elseif (event == "PLAYER_ENTERING_WORLD") or (event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
+    elseif event == "PLAYER_ENTERING_WORLD" or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS" then
         self.Name:SetText("")
         self.CastBar:Hide()
         self.specTexture = nil
@@ -501,28 +550,30 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
         self:UpdateVisible()
         self:UpdatePlayer()
         self:ResetTrinket()
-    elseif (event == "PLAYER_REGEN_ENABLED") then
+    elseif event == "PLAYER_REGEN_ENABLED" then
         self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-
         self:UpdateVisible()
     end
 end
 
 function sArenaFrameMixin:Initialize()
     self:SetMysteryPlayer()
-    self.parent:SetupDrag(self, self.parent, nil, "UpdateFrameSettings")
-    self.parent:SetupDrag(self.CastBar, self.CastBar, "castBar", "UpdateCastBarSettings")
-    local blizzArenaFrame = _G["CompactArenaFrameMember" .. self:GetID()]
-    if blizzArenaFrame and blizzArenaFrame.SpellDiminishStatusTray then
-        self.drTray = blizzArenaFrame.SpellDiminishStatusTray
-        self.drTray:SetParent(self)
-        self.drTray:EnableMouse(false)
-        self.drTray:SetMouseClickEnabled(false)
-        self.drTray._isSArenaTray = true
+    self.parent:EnableFrameDragging(self, self.parent, nil, "UpdateFrameSettings")
+    self.parent:EnableFrameDragging(self.CastBar, self.CastBar, "castBar", "UpdateCastBarSettings")
+
+    -- Claim the DR tray from Blizzard's CompactArenaFrame
+    local blizzMember = _G["CompactArenaFrameMember" .. self:GetID()]
+    if blizzMember and blizzMember.SpellDiminishStatusTray then
+        local tray = blizzMember.SpellDiminishStatusTray
+        tray:SetParent(self)
+        tray:EnableMouse(false)
+        tray:SetMouseClickEnabled(false)
+        self.drTray = tray
     end
     self.drFrames = {}
-    self.parent:SetupDrag(self.SpecIcon, self.SpecIcon, "specIcon", "UpdateSpecIconSettings")
-    self.parent:SetupDrag(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
+
+    self.parent:EnableFrameDragging(self.SpecIcon, self.SpecIcon, "specIcon", "UpdateSpecIconSettings")
+    self.parent:EnableFrameDragging(self.Trinket, self.Trinket, "trinket", "UpdateTrinketSettings")
 end
 
 function sArenaFrameMixin:OnEnter()

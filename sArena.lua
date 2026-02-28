@@ -16,6 +16,7 @@ sArenaMixin.defaultSettings = {
             alwaysShow = true,
         },
         layoutSettings = {},
+        enableCombatLogging = false,
     },
 }
 
@@ -401,13 +402,34 @@ function sArenaFrameMixin:UpdateStatusTextVisible()
     self.PowerText:SetShown(db.profile.statusText.alwaysShow)
 end
 
--- default bars, will get overwritten from layouts
-local typeInfoTexture = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill";
+-- Default bar fill — layouts override via barFillData on each castbar
+local defaultBarFill = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
 if sArenaCastingBarExtensionMixin then
-    sArenaCastingBarExtensionMixin.typeInfo = {
-        filling = typeInfoTexture,
-        full = typeInfoTexture,
-        glow = typeInfoTexture
+    sArenaCastingBarExtensionMixin.barFillData = {
+        filling = defaultBarFill,
+        full    = defaultBarFill,
+        glow    = defaultBarFill,
     }
+end
+
+local NUM_ARENA_FRAMES = 3
+
+-- Shared layout accessor factory — avoids duplicate getSetting/setSetting in every layout file
+function sArenaMixin:CreateLayoutAccessors(layoutObj, onChangeCallback)
+    local function readValue(info)
+        return layoutObj.db[info[#info]]
+    end
+
+    local function writeValue(info, val)
+        layoutObj.db[info[#info]] = val
+        for idx = 1, NUM_ARENA_FRAMES do
+            local arenaFrame = info.handler["arena" .. idx]
+            if onChangeCallback then
+                onChangeCallback(layoutObj, arenaFrame)
+            end
+        end
+    end
+
+    return readValue, writeValue
 end
 
