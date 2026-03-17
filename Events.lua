@@ -1,8 +1,5 @@
 -- Events.lua: Event handlers, hooks, and Blizzard frame integration
 
--- Spell API shim
-local GetSpellTexture = GetSpellTexture or C_Spell.GetSpellTexture
-
 -- Cache globals used in event hot-path
 local UnitHealthMax    = UnitHealthMax
 local UnitHealth       = UnitHealth
@@ -430,7 +427,7 @@ local function BridgeDebuffsToClassIcon(arenaFrame, blizzMember)
     debuff:HookScript("OnHide", ResetToClassIcon)
 end
 
--- Relay PvP trinket cooldowns from Blizzard's CcRemoverFrame.
+-- Relay PvP trinket icon+cooldown from Blizzard's hidden CcRemoverFrame.
 local function RelayTrinketCooldown(arenaFrame, blizzMember)
     local ccRemover = blizzMember.CcRemoverFrame
     if not ccRemover then return end
@@ -440,6 +437,14 @@ local function RelayTrinketCooldown(arenaFrame, blizzMember)
 
     hooksecurefunc(ccRemover.Cooldown, "SetCooldown", function(_, start, dur)
         arenaFrame.Trinket.Cooldown:SetCooldown(start, dur)
+    end)
+
+    hooksecurefunc(ccRemover.Icon, "SetTexture", function(_, texture)
+        arenaFrame.Trinket.Texture:SetTexture(texture)
+    end)
+
+    hooksecurefunc(ccRemover.Cooldown, "Clear", function()
+        arenaFrame.Trinket.Cooldown:Clear()
     end)
 end
 
@@ -453,8 +458,6 @@ local FRAME_EVENTS = {
     "PLAYER_ENTERING_WORLD",
     "ARENA_OPPONENT_UPDATE",
     "ARENA_PREP_OPPONENT_SPECIALIZATIONS",
-    "ARENA_COOLDOWNS_UPDATE",
-    "ARENA_CROWD_CONTROL_SPELL_UPDATE",
     "UNIT_NAME_UPDATE",
 }
 
@@ -508,14 +511,6 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
         elseif event == "ARENA_OPPONENT_UPDATE" then
             self:UpdateVisible()
             self:UpdatePlayer(arg1)
-        elseif event == "ARENA_COOLDOWNS_UPDATE" then
-            -- handled via CcRemoverFrame relay
-        elseif event == "ARENA_CROWD_CONTROL_SPELL_UPDATE" then
-            if not issecretvalue(arg1) and arg1 ~= self.Trinket.spellID then
-                local _, spellTex = GetSpellTexture(arg1)
-                self.Trinket.spellID = arg1
-                self.Trinket.Texture:SetTexture(spellTex)
-            end
         elseif event == "UNIT_HEALTH" then
             self:SetLifeState()
             self:SetStatusText()
