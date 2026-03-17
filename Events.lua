@@ -40,100 +40,6 @@ local function SuppressBlizzardArenaUI(instanceType)
 end
 
 -- ============================================================
--- Edit-Mode / Reload helpers
--- ============================================================
-local reloadWarningFrame
-local beenInArena = false
-
-local function EnsureArenaFramesEnabled()
-    local accountSettings = EditModeManagerFrame and EditModeManagerFrame.AccountSettings
-    if not accountSettings then return end
-
-    local arenaFramesEnabled = EditModeManagerFrame:GetAccountSettingValueBool(Enum.EditModeAccountSetting.ShowArenaFrames)
-    if not arenaFramesEnabled then
-        EditModeManagerFrame:OnAccountSettingChanged(Enum.EditModeAccountSetting.ShowArenaFrames, true)
-        accountSettings:RefreshArenaFrames()
-    end
-end
-
-local function ShowReloadWarning()
-    if sArenaSkipReloadWarning then return end
-    if reloadWarningFrame then
-        reloadWarningFrame:Show()
-        return
-    end
-
-    local f = CreateFrame("Frame", "sArenaReloadWarning", UIParent, "BackdropTemplate")
-    f:SetSize(400, 220)
-    f:SetPoint("CENTER", UIParent, "CENTER", 0, 150)
-    f:SetFrameStrata("DIALOG")
-    f:EnableMouse(true)
-
-    f:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-        insets   = { left = 1, right = 1, top = 1, bottom = 1 },
-    })
-    f:SetBackdropColor(0.05, 0.05, 0.09, 0.95)
-    f:SetBackdropBorderColor(0.22, 0.75, 0.82, 0.5)
-
-    local stripe = f:CreateTexture(nil, "ARTWORK")
-    stripe:SetTexture("Interface\\Buttons\\WHITE8x8")
-    stripe:SetPoint("TOPLEFT", 1, -1)
-    stripe:SetPoint("TOPRIGHT", -1, -1)
-    stripe:SetHeight(2)
-    stripe:SetVertexColor(0.2, 0.82, 0.9, 1)
-
-    local icon = f:CreateTexture(nil, "OVERLAY")
-    icon:SetTexture("Interface\\DialogFrame\\DialogAlertIcon")
-    icon:SetSize(36, 36)
-    icon:SetPoint("TOP", 0, -14)
-
-    local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", icon, "BOTTOM", 0, -6)
-    title:SetText("|cff40d0e0Reload Required|r")
-
-    local body = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    body:SetPoint("TOP", title, "BOTTOM", 0, -10)
-    body:SetWidth(360)
-    body:SetJustifyH("CENTER")
-    body:SetText("Edit Mode causes the DR frames to error\nafter the first arena game.\n\n|cff888899Reload UI to fix.|r")
-
-    local btn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    btn:SetSize(140, 28)
-    btn:SetPoint("BOTTOM", 0, 28)
-    btn:SetText("Reload UI")
-    btn:SetScript("OnClick", function()
-        EnsureArenaFramesEnabled()
-        ReloadUI()
-    end)
-
-    local dismissText = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    dismissText:SetPoint("TOP", btn, "BOTTOM", 0, -3)
-    dismissText:SetText("|cff555566dismiss|r")
-
-    local dismissBtn = CreateFrame("Button", nil, f)
-    dismissBtn:SetPoint("TOPLEFT", dismissText, "TOPLEFT", -6, 2)
-    dismissBtn:SetPoint("BOTTOMRIGHT", dismissText, "BOTTOMRIGHT", 6, -2)
-    dismissBtn:SetScript("OnClick", function() f:Hide() end)
-    dismissBtn:SetScript("OnEnter", function() dismissText:SetText("|cff8899aadismiss|r") end)
-    dismissBtn:SetScript("OnLeave", function() dismissText:SetText("|cff555566dismiss|r") end)
-
-    f:SetAlpha(0)
-    local ag = f:CreateAnimationGroup()
-    local anim = ag:CreateAnimation("Alpha")
-    anim:SetFromAlpha(0)
-    anim:SetToAlpha(1)
-    anim:SetDuration(0.4)
-    anim:SetSmoothing("OUT")
-    ag:SetScript("OnFinished", function() f:SetAlpha(1) end)
-    ag:Play()
-
-    reloadWarningFrame = f
-end
-
--- ============================================================
 -- Parent Frame Events
 -- ============================================================
 function sArenaMixin:OnLoad()
@@ -145,11 +51,6 @@ function sArenaMixin:OnEvent(event, ...)
     if event == "PLAYER_LOGIN" then
         self:Initialize()
         self:UnregisterEvent("PLAYER_LOGIN")
-
-        local _, loginInstanceType = IsInInstance()
-        if loginInstanceType ~= "arena" then
-            C_Timer.After(3, function() beenInArena = true end)
-        end
     elseif event == "PLAYER_ENTERING_WORLD" then
         local _, instanceType = IsInInstance()
         SuppressBlizzardArenaUI(instanceType)
@@ -164,11 +65,6 @@ function sArenaMixin:OnEvent(event, ...)
 
         if instanceType == "arena" then
             self.inArena = true
-            if beenInArena then
-                ShowReloadWarning()
-            else
-                beenInArena = true
-            end
         else
             self.inArena = false
         end
