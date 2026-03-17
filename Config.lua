@@ -20,6 +20,51 @@ local exclamation = "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0
 
 local growthValues = { "Down", "Up", "Right", "Left" }
 
+local function GetAuraPriorityOrder(handler)
+    handler:NormalizeAuraPriorityOrder(handler.db.profile)
+    return handler.db.profile.auraPriorityOrder
+end
+
+local function GetAuraPrioritySlot(info, slot)
+    local order = GetAuraPriorityOrder(info.handler)
+    return order[slot]
+end
+
+local function RefreshAuraPriority(handler)
+    for i = 1, 3 do
+        local frame = handler["arena" .. i]
+        if frame then
+            frame:FindAura()
+        end
+    end
+end
+
+local function SetAuraPrioritySlot(info, slot, auraType)
+    local order = GetAuraPriorityOrder(info.handler)
+    local currentSlot = order[slot]
+
+    if currentSlot == auraType then
+        return
+    end
+
+    local otherSlot
+    for i = 1, #order do
+        if order[i] == auraType then
+            otherSlot = i
+            break
+        end
+    end
+
+    if otherSlot then
+        order[slot], order[otherSlot] = order[otherSlot], order[slot]
+    else
+        order[slot] = auraType
+        info.handler:NormalizeAuraPriorityOrder(info.handler.db.profile)
+    end
+
+    RefreshAuraPriority(info.handler)
+end
+
 function sArenaMixin:GetLayoutOptionsTable(layoutName)
     local optionsTable = {
         arenaFrames = {
@@ -809,6 +854,52 @@ sArenaMixin.optionsTable = {
                                     type = "toggle",
                                     get = function(info) return info.handler.db.profile.showNames end,
                                     set = function(info, val) info.handler.db.profile.showNames = val for i = 1, 3 do info.handler["arena"..i].Name:SetShown(val) end end,
+                                },
+                                auraPriorityOrder = {
+                                    order = 3,
+                                    name = "Class Icon Aura Priority",
+                                    desc = "Choose the order used when checking which aura category should replace the class icon. Selecting a category in one slot swaps it with its current slot.",
+                                    type = "group",
+                                    width = "full",
+                                    inline = true,
+                                    args = {
+                                        slot1 = {
+                                            order = 1,
+                                            name = "Priority 1",
+                                            type = "select",
+                                            width = "double",
+                                            values = sArenaMixin.auraPriorityLabels,
+                                            get = function(info) return GetAuraPrioritySlot(info, 1) end,
+                                            set = function(info, val) SetAuraPrioritySlot(info, 1, val) end,
+                                        },
+                                        slot2 = {
+                                            order = 2,
+                                            name = "Priority 2",
+                                            type = "select",
+                                            width = "double",
+                                            values = sArenaMixin.auraPriorityLabels,
+                                            get = function(info) return GetAuraPrioritySlot(info, 2) end,
+                                            set = function(info, val) SetAuraPrioritySlot(info, 2, val) end,
+                                        },
+                                        slot3 = {
+                                            order = 3,
+                                            name = "Priority 3",
+                                            type = "select",
+                                            width = "double",
+                                            values = sArenaMixin.auraPriorityLabels,
+                                            get = function(info) return GetAuraPrioritySlot(info, 3) end,
+                                            set = function(info, val) SetAuraPrioritySlot(info, 3, val) end,
+                                        },
+                                        slot4 = {
+                                            order = 4,
+                                            name = "Priority 4",
+                                            type = "select",
+                                            width = "double",
+                                            values = sArenaMixin.auraPriorityLabels,
+                                            get = function(info) return GetAuraPrioritySlot(info, 4) end,
+                                            set = function(info, val) SetAuraPrioritySlot(info, 4, val) end,
+                                        },
+                                    },
                                 },
                             },
                         },

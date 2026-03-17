@@ -2,6 +2,24 @@ sArenaMixin = {}
 sArenaFrameMixin = {}
 sArenaCastingBarExtensionMixin = {}
 sArenaMixin.layouts = {}
+sArenaMixin.auraPriorityLabels = {
+    CROWD_CONTROL = "CROWD_CONTROL",
+    IMPORTANT = "IMPORTANT",
+    BIG_DEFENSIVE = "BIG_DEFENSIVE",
+    EXTERNAL_DEFENSIVE = "EXTERNAL_DEFENSIVE",
+}
+sArenaMixin.defaultAuraPriorityOrder = {
+    "CROWD_CONTROL",
+    "BIG_DEFENSIVE",
+    "EXTERNAL_DEFENSIVE",
+    "IMPORTANT",
+}
+sArenaMixin.auraPriorityFilters = {
+    CROWD_CONTROL = { filter = "HARMFUL|CROWD_CONTROL", validateDefensive = false },
+    IMPORTANT = { filter = "HELPFUL|IMPORTANT", validateDefensive = false },
+    BIG_DEFENSIVE = { filter = "HELPFUL|BIG_DEFENSIVE", validateDefensive = true },
+    EXTERNAL_DEFENSIVE = { filter = "HELPFUL|EXTERNAL_DEFENSIVE", validateDefensive = false },
+}
 
 -- Font shim: Game10Font_o1 was removed in Midnight
 local statusTextFont = (Game10Font_o1 and "Game10Font_o1") or "SystemFont_Shadow_Small2"
@@ -17,6 +35,12 @@ sArenaMixin.defaultSettings = {
         },
         layoutSettings = {},
         enableCombatLogging = false,
+        auraPriorityOrder = {
+            "CROWD_CONTROL",
+            "BIG_DEFENSIVE",
+            "EXTERNAL_DEFENSIVE",
+            "IMPORTANT",
+        },
     },
 }
 
@@ -42,6 +66,62 @@ local function FormatHP(hp)
     end
 end
 
+local function CopyAuraPriorityOrder(order)
+    local copy = {}
+
+    for i, value in ipairs(order) do
+        copy[i] = value
+    end
+
+    return copy
+end
+
+local function AurasChanged(updateInfo)
+    if not updateInfo then return true end
+    if updateInfo.isFullUpdate then return true end
+    if (updateInfo.addedAuras and #updateInfo.addedAuras > 0)
+        or (updateInfo.updatedAuras and #updateInfo.updatedAuras > 0)
+        or (updateInfo.removedAuraInstanceIDs and #updateInfo.removedAuraInstanceIDs > 0)
+    then
+        return true
+    end
+
+    return false
+end
+
+local function IterateAuras(filter, validateDefensive, unit)
+    local spellID, startTime, duration, texture
+
+    for i = 1, 40 do
+        local auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, filter)
+        if not auraData then break end
+
+        local durationInfo = C_UnitAuras.GetAuraDuration(unit, auraData.auraInstanceID)
+        local auraStart = durationInfo and durationInfo:GetStartTime()
+        local auraDuration = durationInfo and durationInfo:GetTotalDuration()
+
+        if auraStart and auraDuration then
+            local garbageAuraData = false
+
+            if validateDefensive then
+                local isDefensive = C_UnitAuras.AuraIsBigDefensive(auraData.spellId)
+                if not (issecretvalue(isDefensive) or isDefensive) then
+                    garbageAuraData = true
+                end
+            end
+
+            if not garbageAuraData then
+                spellID = auraData.spellId
+                startTime = auraStart
+                duration = auraDuration
+                texture = auraData.icon
+            end
+        end
+    end
+
+    return spellID, startTime, duration, texture
+end
+
 local function ChatCommand(input)
     if not input or input:trim() == "" then
         LibStub("AceConfigDialog-3.0"):Open("sArena")
@@ -55,6 +135,7 @@ function sArenaMixin:Initialize()
 
     self.db = LibStub("AceDB-3.0"):New("sArena3DB", self.defaultSettings, true)
     db = self.db
+    self:NormalizeAuraPriorityOrder(db.profile)
 
     db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
     db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig")
@@ -73,7 +154,48 @@ function sArenaMixin:Initialize()
 end
 
 function sArenaMixin:RefreshConfig()
+    self:NormalizeAuraPriorityOrder(db.profile)
     self:SetLayout(nil, db.profile.currentLayout)
+end
+
+function sArenaMixin:NormalizeAuraPriorityOrder(profile)
+    if not profile then return end
+
+    local fallbackOrder
+    if profile.prioImportantOverDefensives then
+        fallbackOrder = {
+            "CROWD_CONTROL",
+            "IMPORTANT",
+            "BIG_DEFENSIVE",
+            "EXTERNAL_DEFENSIVE",
+        }
+    else
+        fallbackOrder = CopyAuraPriorityOrder(self.defaultAuraPriorityOrder)
+    end
+
+    local order = {}
+    local seen = {}
+    local source = profile.auraPriorityOrder
+
+    if type(source) == "table" then
+        for i = 1, #self.defaultAuraPriorityOrder do
+            local auraType = source[i]
+            if self.auraPriorityFilters[auraType] and not seen[auraType] then
+                order[#order + 1] = auraType
+                seen[auraType] = true
+            end
+        end
+    end
+
+    for _, auraType in ipairs(fallbackOrder) do
+        if not seen[auraType] then
+            order[#order + 1] = auraType
+            seen[auraType] = true
+        end
+    end
+
+    profile.auraPriorityOrder = order
+    profile.prioImportantOverDefensives = nil
 end
 
 function sArenaMixin:layoutReload(layout)
@@ -196,7 +318,7 @@ function sArenaFrameMixin:UpdatePlayer(unitEvent)
     local unit = self.unit
 
     self:GetClassAndSpec()
-    self:UpdateClassIcon()
+    self:FindAura()
 
     if ((unitEvent and unitEvent ~= "seen") or not UnitExists(unit)) then
         self:SetMysteryPlayer()
@@ -279,10 +401,39 @@ function sArenaFrameMixin:GetClassAndSpec()
     end
 end
 
-function sArenaFrameMixin:UpdateClassIcon(force)
-    local texture = self.class and sArenaMixin.classIcons[self.class] or 134400
+function sArenaFrameMixin:FindAura(updateInfo)
+    if updateInfo and not AurasChanged(updateInfo) then return end
 
-    if self.currentClassIconTexture == texture and not force then return end
+    local unit = self.unit
+    local spellID, startTime, duration, texture
+    local priorityOrder = db and db.profile and db.profile.auraPriorityOrder or sArenaMixin.defaultAuraPriorityOrder
+
+    for _, auraType in ipairs(priorityOrder) do
+        local filterInfo = sArenaMixin.auraPriorityFilters[auraType]
+        if filterInfo then
+            spellID, startTime, duration, texture = IterateAuras(filterInfo.filter, filterInfo.validateDefensive, unit)
+            if spellID then
+                break
+            end
+        end
+    end
+
+    self.currentAuraSpellID = spellID
+    self.currentAuraStartTime = startTime
+    self.currentAuraDuration = duration
+    self.currentAuraTexture = texture
+
+    self:UpdateClassIcon()
+end
+
+function sArenaFrameMixin:UpdateClassIcon(force)
+    if self.currentAuraSpellID and self.currentAuraStartTime and self.currentAuraDuration then
+        self.ClassIconCooldown:SetCooldown(self.currentAuraStartTime, self.currentAuraDuration)
+    elseif not self.currentAuraSpellID then
+        self.ClassIconCooldown:Clear()
+    end
+
+    local texture = self.currentAuraSpellID and self.currentAuraTexture or self.class and sArenaMixin.classIcons[self.class] or 134400
 
     self.currentClassIconTexture = texture
     self.ClassIcon:SetTexture(texture)
@@ -313,6 +464,10 @@ end
 
 function sArenaFrameMixin:ResetLayout()
     self.currentClassIconTexture = nil
+    self.currentAuraSpellID = nil
+    self.currentAuraStartTime = nil
+    self.currentAuraDuration = nil
+    self.currentAuraTexture = nil
 
     sArenaFrameMixin.ResetTexture(nil, self.ClassIcon)
     ResetStatusBar(self.HealthBar)
@@ -325,6 +480,7 @@ function sArenaFrameMixin:ResetLayout()
 
     self.ClassIconCooldown:SetSwipeTexture(1)
     self.ClassIconCooldown:SetUseCircularEdge(false)
+    self.ClassIconCooldown:Clear()
 
     local f = self.Trinket
     f:ClearAllPoints()

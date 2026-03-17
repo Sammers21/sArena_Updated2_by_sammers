@@ -9,8 +9,6 @@ local UnitPowerType    = UnitPowerType
 local UnitCastingInfo  = UnitCastingInfo
 local UnitChannelInfo  = UnitChannelInfo
 local mathfloor        = math.floor
-local strfind          = string.find
-
 local hiddenAnchor  -- invisible frame used to hide Blizzard's arena UI
 
 local NUM_ARENA_FRAMES = 3
@@ -395,38 +393,6 @@ local function AttachBlizzardCastBar(arenaFrame, blizzMember, unitID)
     end)
 end
 
--- Mirror debuff icon+cooldown from Blizzard's DebuffFrame onto our class icon.
-local function BridgeDebuffsToClassIcon(arenaFrame, blizzMember)
-    local debuff = blizzMember.DebuffFrame
-    if not debuff then return end
-
-    local function ResetToClassIcon()
-        arenaFrame.ClassIconCooldown:Clear()
-        arenaFrame:UpdateClassIcon(true)
-    end
-
-    hooksecurefunc(debuff.Icon, "SetTexture", function(_, tex)
-        if not tex then return end
-        -- Secret texture = real debuff icon from arena; pass straight to C API
-        if issecretvalue(tex) then
-            arenaFrame.ClassIcon:SetTexture(tex)
-        elseif strfind(tex, "QUESTIONMARK", 1, true) then
-            -- Question-mark means no active CC — restore class icon
-            ResetToClassIcon()
-        else
-            arenaFrame.ClassIcon:SetTexture(tex)
-        end
-    end)
-
-    hooksecurefunc(debuff.Cooldown, "SetCooldown", function(_, start, dur)
-        arenaFrame.ClassIconCooldown:SetCooldown(start, dur)
-    end)
-
-    -- Both Clear and frame hiding should restore the real class icon
-    hooksecurefunc(debuff.Cooldown, "Clear", ResetToClassIcon)
-    debuff:HookScript("OnHide", ResetToClassIcon)
-end
-
 -- Relay PvP trinket icon+cooldown from Blizzard's hidden CcRemoverFrame.
 local function RelayTrinketCooldown(arenaFrame, blizzMember)
     local ccRemover = blizzMember.CcRemoverFrame
@@ -467,6 +433,7 @@ local UNIT_EVENTS = {
     "UNIT_POWER_UPDATE",
     "UNIT_MAXPOWER",
     "UNIT_DISPLAYPOWER",
+    "UNIT_AURA",
 }
 
 function sArenaFrameMixin:OnLoad()
@@ -495,7 +462,6 @@ function sArenaFrameMixin:OnLoad()
     local blizzMember = _G["CompactArenaFrameMember" .. self:GetID()]
     if blizzMember then
         AttachBlizzardCastBar(self, blizzMember, unitID)
-        BridgeDebuffsToClassIcon(self, blizzMember)
         RelayTrinketCooldown(self, blizzMember)
     end
 
@@ -529,6 +495,8 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
             self:SetPowerType(powerType)
             self.PowerBar:SetMinMaxValues(0, UnitPowerMax(unit))
             self.PowerBar:SetValue(UnitPower(unit))
+        elseif event == "UNIT_AURA" then
+            self:FindAura(arg1)
         end
     elseif event == "PLAYER_LOGIN" then
         self:UnregisterEvent("PLAYER_LOGIN")
@@ -541,7 +509,12 @@ function sArenaFrameMixin:OnEvent(event, eventUnit, arg1)
         self.CastBar:Hide()
         self.specTexture = nil
         self.class = nil
+        self.currentAuraSpellID = nil
+        self.currentAuraStartTime = nil
+        self.currentAuraDuration = nil
+        self.currentAuraTexture = nil
         self.currentClassIconTexture = nil
+        self.ClassIconCooldown:Clear()
         self:UpdateVisible()
         self:UpdatePlayer()
         self:ResetTrinket()
