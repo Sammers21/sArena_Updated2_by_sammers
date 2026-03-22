@@ -6,6 +6,7 @@
 ## OptionalDeps: ElvUI
 ## X-Category: PvP/Arena
 ## X-Credits: Stako, Tekkub, Starship, Kouri, Kollektiv, Lyn, haste, evl, Zork, jturel, wardz, yaggertv, Bicmex, devai42coding, Ma1ithorne
+## X-Wago-ID: x6188WN1
 ## IconTexture: Interface\ICONS\Achievement_arena_2v2_7
 ## SavedVariables: sArena3DB
 
